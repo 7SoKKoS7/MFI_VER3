@@ -47,6 +47,7 @@ MFI_VER3/
       │  ├─ Utils.mqh         # Утилиты
       │  ├─ MarketData.mqh    # Рыночные данные
       │  ├─ ZigZagAdapter.mqh # Адаптер ZigZag
+      │  ├─ ZigZagInternal.mqh # Внутренняя реализация ZigZag
       │  ├─ PivotEngine.mqh   # Движок пивотов
       │  ├─ TrendEngine.mqh   # Движок трендов
       │  ├─ Breakout.mqh      # Логика пробоев
@@ -76,6 +77,7 @@ MFI_VER3/
 - **Без перерисовки** — строгая политика no repaint
 - **Одна ответственность — один файл** — четкое разделение модулей
 - **Порядок include** — строгий порядок подключения модулей
+- **Массивы в сигнатурах функций** — передавать ПО ССЫЛКЕ (`type &arr[]`)
 
 ### 2. Порядок подключения модулей
 ```mql5
@@ -108,7 +110,6 @@ MFI_VER3/
 - Шаблоны (`template`)
 - Исключения (`try/catch`)
 - Динамическое выделение памяти (`new/delete`)
-- Ссылки в сигнатурах функций
 - **Без `#pragma once`**, используем include-гварды `#ifndef/#define/#endif`.
 - **Dummy-plot для компиляции скелета**: минимум 1 plot и 1 buffer с типом `DRAW_NONE`, чтобы индикатор успешно компилировался даже в виде пустого шаблона.
 
@@ -194,6 +195,44 @@ MQL5/Indicators/MFI_Modular/
 - **Сила тренда: 3/3** — оценка силы тренда
 - **Объем M5:✓ M15:✓ H1:✓ (3/3)** — подтверждение объема
 - **Сессия: ✓** — валидность торговой сессии
+
+## ZigZag — внутренний модуль
+
+В проекте используется **только** внутренний ZigZag (`include/core/ZigZagInternal.mqh`), без `iCustom` и внешних зависимостей.
+
+### Особенности внутреннего ZigZag:
+- **Работает на закрытых барах** — строгое соблюдение no repaint политики
+- **Параметры Depth/Deviation/Backstep** — стандартные настройки ZigZag
+- **Возвращает массивы индексов/цен экстремумов** — для дальнейшей обработки
+- **Отрисовка/логика отдельно** — модуль только вычисляет экстремумы
+- **Без внешних зависимостей** — полностью самодостаточная реализация
+
+### Использование:
+```mql5
+int extremaCount;
+int extremaIdx[];
+double extremaPrice[];
+ArrayResize(extremaIdx, 100);
+ArrayResize(extremaPrice, 100);
+
+bool success = MFV_ZZ_FindExtrema(Symbol(), Period(), 
+                                 12, 5, 3,  // Depth, Deviation, Backstep
+                                 extremaCount, extremaIdx, extremaPrice);
+```
+
+## Пресет MF для ZigZag
+
+Параметры Depth/Deviation/Backstep управляются входами `ZZ_MF_*` по таймфреймам. Ключ `ZZ_UseMF_Preset` включает пресет.
+
+### Рекомендуемые MF-настройки:
+- **M5**: Depth=12, Deviation=5, Backstep=3
+- **M15**: Depth=12, Deviation=5, Backstep=3  
+- **H1**: Depth=24, Deviation=5, Backstep=3
+- **H4**: Depth=48, Deviation=5, Backstep=3
+- **D1**: Depth=60, Deviation=5, Backstep=3
+
+### Формулировка в свойствах:
+"Рекомендуемые MF" — оптимальные настройки ZigZag для каждого таймфрейма согласно методике MasterForex-V.
 
 ## Документация
 

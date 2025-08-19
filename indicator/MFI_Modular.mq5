@@ -33,5 +33,5 @@ int OnInit()
 void OnDeinit(const int reason) {}
 int OnCalculate(const int rates_total,const int prev_calculated,const int begin,const double &price[])
 {
-   return(rates_total);
+   return MFV_UpdateAll(g_state, Symbol(), Period(), rates_total, prev_calculated);
 }
