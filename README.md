@@ -295,7 +295,8 @@ bool success = MFV_ZZ_FindExtrema(Symbol(), Period(),
 
 ---
 
-**Версия:** 0.1.0 (модульная)  
 **Совместимость:** MetaTrader 5  
 **Автор:** Основан на стратегии MasterForex-V  
 **Статус:** Bootstrap завершен, готов к разработке
+
+**Примечание:** это НЕ #property version. Фактическая версия задаётся в MFI_Modular.mq5 в формате xxx.yyy.

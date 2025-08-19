@@ -1,11 +1,9 @@
-# Считай все .mqh как MQL5
-*.mqh linguist-language=MQL5
-
-# Вся «посторонка» не влияет на статистику
-indicator/ThirdParty/* linguist-vendored
-data/*                 linguist-vendored
-docs/*                 linguist-documentation
-
-# Бинарники и артефакты — не считаем
+.mq5 linguist-language=MQL5
+.mqh linguist-language=MQL5
+indicator/ThirdParty/ linguist-vendored
+data/** linguist-vendored
+docs/** linguist-documentation
+DataDocs/** linguist-documentation
 *.ex5 linguist-generated
 *.ex4 linguist-generated
+*.mqproj linguist-generated

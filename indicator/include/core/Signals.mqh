@@ -1,6 +1,17 @@
 #ifndef __MFV_SIGNALS_MQH__
 #define __MFV_SIGNALS_MQH__
 
+int MFV_TFIndex(ENUM_TIMEFRAMES tf){
+   switch(tf){
+      case PERIOD_M5:  return 0;
+      case PERIOD_M15: return 1;
+      case PERIOD_H1:  return 2;
+      case PERIOD_H4:  return 3;
+      case PERIOD_D1:  return 4;
+      default:         return 2; // H1 fallback
+   }
+}
+
 int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, int rates_total, int prev_calculated)
 {
    int zzDepth, zzDev, zzBack;
@@ -10,7 +21,7 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
    MFV_ZZ_FindExtrema(symbol, chart_tf, zzDepth, zzDev, zzBack, cnt, idx, prc);
 
    // PivotEngine stage: process ZigZag extrema and compute Medium pivot
-   int tfIndex = 0; // TODO: map chart_tf to index (M5=0, M15=1, H1=2, H4=3, D1=4)
+   const int tfIndex = MFV_TFIndex(chart_tf);
    MFV_Pivot_UpdateTF(tfIndex, idx, prc, cnt, st);
 
    // TODO: Trend → Breakout → Filters → Signals → Draw → Panel

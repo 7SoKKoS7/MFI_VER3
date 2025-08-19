@@ -1,5 +1,5 @@
-#ifndef __MFV_ZIGZAGINTERNAL_MQH__
-#define __MFV_ZIGZAGINTERNAL_MQH__
+#ifndef MFV_ZZ_INTERNAL_MQH
+#define MFV_ZZ_INTERNAL_MQH
 
 #include "Utils.mqh"
 
@@ -49,4 +49,4 @@ bool MFV_ZZ_FindExtrema(const string symbol, ENUM_TIMEFRAMES tf,
    return(outCount>0);
 }
 
-#endif // __MFV_ZIGZAGINTERNAL_MQH__
+#endif

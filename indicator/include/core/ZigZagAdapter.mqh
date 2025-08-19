@@ -1,6 +1,4 @@
-#ifndef __MFV_ZIGZAGADAPTER_MQH__
-#define __MFV_ZIGZAGADAPTER_MQH__
-
+#ifndef MFV_ZIGZAGADAPTER_MQH
+#define MFV_ZIGZAGADAPTER_MQH
 #include "ZigZagInternal.mqh"
-
-#endif // __MFV_ZIGZAGADAPTER_MQH__
+#endif
