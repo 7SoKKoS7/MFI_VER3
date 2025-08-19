@@ -1,79 +1,29 @@
-# Python caches and artifacts
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.mypy_cache/
-.pytype/
-.pyre/
-.ruff_cache/
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-env/
-
-# Build/distribution
-build/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-pip-wheel-metadata/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Test/coverage
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.nox/
-
-# Logs and temp
+# ==== BINARIES / BUILD ARTIFACTS ====
+*.ex5
+*.ex4
+*.mqproj
+*.cache
 *.log
 *.tmp
-*.temp
-logs/
-tmp/
-temp/
+**/*.bak
+**/*.old
+**/~$*
 
-# Editors/IDEs
-.vscode/
-.idea/
-.history/
-.vs/
-*.code-workspace
+# ==== DATA: read-only (не редактировать CSV) ====
+data/**
 
-# OS files
-.DS_Store
-Thumbs.db
-desktop.ini
+# ==== THIRD-PARTY: не используем и не правим ====
+indicator/ThirdParty/**
 
-# Cursor
-.cursor/
-!.cursorrules
+# ==== IDE/ENV ====
+.vscode/**
+.idea/**
+.github/**
+.git/**
 
-# MetaTrader 4/5 compiled artifacts and common folders
-*.ex4
-*.ex5
-MQL5/Tester/
-MQL5/Logs/
-MQL5/Profiles/
-
-# Project-specific
-
-
-# Keep data and sources tracked (do NOT ignore)
-!*.mq5
-# CSV файлы оставляем в репозитории (нет общего правила *.csv)
+# ==== MEDIA & MISC ====
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.pdf

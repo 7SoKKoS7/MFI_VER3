@@ -1,0 +1,42 @@
+# ---- MT5 compiled artifacts
+*.ex5
+*.ex4
+*.mqh.swp
+*.mq5.swp
+*.tmp
+*.bak
+*.orig
+
+# ---- Logs & tester noise
+*.log
+*.tst
+*.opt
+*.set
+MQL5/Logs/**
+MQL5/Tester/**
+MQL5/Profiles/Tester/**
+MQL5/Profiles/Charts/**
+MQL5/Profiles/Templates/**
+MQL5/Files/**
+MQL5/History/**
+
+# ---- IDE/editor detritus
+.vscode/**
+.idea/**
+*.code-workspace
+
+# ---- Screenshots & media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# ---- Cache
+**/.cache/**
+**/cache/**
+**/__pycache__/**
+
+# ---- System files
+.DS_Store
+Thumbs.db
