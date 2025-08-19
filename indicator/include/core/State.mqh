@@ -5,9 +5,7 @@
 struct MFV_State
 {
    MFV_Trend trends[5];
-   double    pivotHigh[5];
-   double    pivotLow[5];
-   bool      pivotValid[5];
+   MFV_Pivots piv[5];
    MFV_Reason lastReason[5];
 };
 static MFV_State g_state;
