@@ -30,7 +30,14 @@ int OnInit()
    PlotIndexSetString(0,PLOT_LABEL,"MFV Dummy");
    return(INIT_SUCCEEDED);
 }
-void OnDeinit(const int reason) {}
+
+void OnDeinit(const int reason) 
+{
+   // Очищаем панель и линии при деинициализации
+   MFV_Panel_Destroy();
+   MFV_Draw_ClearAll("MFV_PVT_");
+}
+
 int OnCalculate(const int rates_total,const int prev_calculated,const int begin,const double &price[])
 {
    return MFV_UpdateAll(g_state, Symbol(), Period(), rates_total, prev_calculated);
