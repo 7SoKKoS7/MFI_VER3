@@ -1,9 +1,14 @@
-.mq5 linguist-language=MQL5
-.mqh linguist-language=MQL5
-indicator/ThirdParty/ linguist-vendored
-data/** linguist-vendored
-docs/** linguist-documentation
-DataDocs/** linguist-documentation
+# Явно считаем MQ5 и MQL-хедеры как MQL5
+*.mq5 linguist-language=MQL5
+*.mqh linguist-language=MQL5
+
+# Не участвует в "языковой" статистике
+indicator/ThirdParty/** linguist-vendored
+data/**                 linguist-vendored
+docs/**                 linguist-documentation
+DataDocs/**             linguist-documentation
+
+# Бинарники/артефакты сборки — не считаем
 *.ex5 linguist-generated
 *.ex4 linguist-generated
 *.mqproj linguist-generated
