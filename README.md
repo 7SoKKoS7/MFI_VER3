@@ -200,6 +200,62 @@ MQL5/Indicators/MFI_Modular/
 - **Фильтр фазы** — Flat/Trend определение
 - **Фильтр импульса** — анализ структуры A-B-C
 
+## Визуализация пивотов
+
+### Whitelist таймфреймов
+Фиксированный порядок: **M5, M15, H1, H4, D1**
+
+### Информационная панель
+- **Всегда показывает 5 строк** для всех WL-ТФ, независимо от текущего графика
+- **Формат строки**: `Pivot <TF>: H=… | M=… | L=…` или `Pivot <TF>: (no data)`
+- **Управление Mid**: отдельный параметр `Panel_ShowMid` для отображения M=… в панели
+- **Пиксельный контроль**: отступы, межстрочный интервал, размер шрифта
+
+### Отрисовка на графике
+
+#### Основные режимы:
+- **ShowPivotsOnChart=false** → не рисовать линии, панель остается
+- **PivotsChart_TFOnly=true** → рисовать только текущий ТФ (если он ∈ WL)
+- **PivotsChart_ShowMulti=true** → overlay всех WL-ТФ
+
+#### Управление Mid:
+- **Chart_ShowMid_CurrentTF** → Mid для текущего ТФ
+- **Chart_ShowMid_Overlay** → Mid для overlay ТФ
+
+#### Early Pivot (только текущий ТФ):
+- **EP_Enable** → включение ранних пивотов
+- **EP_MinRetracePips/EP_MinRetraceATR** → пороги ретрейсмента
+- **EP_H_Color/EP_L_Color** → цвета для High/Low
+- Рисуется только для текущего ТФ, если он ∈ WL
+
+### Параметры конфигурации
+
+#### Panel look & feel:
+- `Panel_FontSize` (8..28) — размер шрифта панели
+- `Panel_TextColor` — цвет текста панели
+- `Panel_TopOffsetPx` — отступ от бордюра терминала
+- `Panel_LineSpacingPx` — дополнительный межстрочный интервал
+- `Panel_ShowMid` — показывать M=… в строках панели
+- `Panel_ShowEarly` — eH/eL для текущего ТФ (опционально)
+
+#### Chart drawing:
+- `ShowPivotsOnChart` — рисовать H/M/L на графике
+- `PivotsChart_TFOnly` — только текущий ТФ
+- `PivotsChart_ShowMulti` — overlay всех WL-ТФ
+- `Chart_ShowMid_CurrentTF` — Mid для текущего ТФ
+- `Chart_ShowMid_Overlay` — Mid для overlay
+
+#### Early pivot:
+- `EP_Enable` — включение ранних пивотов
+- `EP_OnCurrentTFOnly` — только текущий ТФ
+- `EP_MinRetracePips` — порог в пунктах
+- `EP_MinRetraceATR` — порог = k*ATR(14)
+- `EP_H_Color/EP_L_Color` — цвета для High/Low
+- `EP_LineStyle/EP_LineWidth` — стиль и ширина линии
+
+#### Debug:
+- `Debug_Log` — печать в "Эксперты" только при true
+
 ## Информационная панель
 
 Индикатор отображает детальную информацию:
@@ -253,6 +309,62 @@ MQL5/Indicators/MFI_Modular/
 - Линии рисуются только при наличии валидных пивотов
 - При отсутствии данных объекты удаляются с графика
 - Имена объектов: `MFV_PVT_<TF>_H|M|L`
+
+## Визуализация пивотов
+
+### Whitelist таймфреймов
+Фиксированный порядок: **M5, M15, H1, H4, D1**
+
+### Информационная панель
+- **Всегда показывает 5 строк** для всех WL-ТФ, независимо от текущего графика
+- **Формат строки**: `Pivot <TF>: H=… | M=… | L=…` или `Pivot <TF>: (no data)`
+- **Управление Mid**: отдельный параметр `Panel_ShowMid` для отображения M=… в панели
+- **Пиксельный контроль**: отступы, межстрочный интервал, размер шрифта
+
+### Отрисовка на графике
+
+#### Основные режимы:
+- **ShowPivotsOnChart=false** → не рисовать линии, панель остается
+- **PivotsChart_TFOnly=true** → рисовать только текущий ТФ (если он ∈ WL)
+- **PivotsChart_ShowMulti=true** → overlay всех WL-ТФ
+
+#### Управление Mid:
+- **Chart_ShowMid_CurrentTF** → Mid для текущего ТФ
+- **Chart_ShowMid_Overlay** → Mid для overlay ТФ
+
+#### Early Pivot (только текущий ТФ):
+- **EP_Enable** → включение ранних пивотов
+- **EP_MinRetracePips/EP_MinRetraceATR** → пороги ретрейсмента
+- **EP_H_Color/EP_L_Color** → цвета для High/Low
+- Рисуется только для текущего ТФ, если он ∈ WL
+
+### Параметры конфигурации
+
+#### Panel look & feel:
+- `Panel_FontSize` (8..28) — размер шрифта панели
+- `Panel_TextColor` — цвет текста панели
+- `Panel_TopOffsetPx` — отступ от бордюра терминала
+- `Panel_LineSpacingPx` — дополнительный межстрочный интервал
+- `Panel_ShowMid` — показывать M=… в строках панели
+- `Panel_ShowEarly` — eH/eL для текущего ТФ (опционально)
+
+#### Chart drawing:
+- `ShowPivotsOnChart` — рисовать H/M/L на графике
+- `PivotsChart_TFOnly` — только текущий ТФ
+- `PivotsChart_ShowMulti` — overlay всех WL-ТФ
+- `Chart_ShowMid_CurrentTF` — Mid для текущего ТФ
+- `Chart_ShowMid_Overlay` — Mid для overlay
+
+#### Early pivot:
+- `EP_Enable` — включение ранних пивотов
+- `EP_OnCurrentTFOnly` — только текущий ТФ
+- `EP_MinRetracePips` — порог в пунктах
+- `EP_MinRetraceATR` — порог = k*ATR(14)
+- `EP_H_Color/EP_L_Color` — цвета для High/Low
+- `EP_LineStyle/EP_LineWidth` — стиль и ширина линии
+
+#### Debug:
+- `Debug_Log` — печать в "Эксперты" только при true
 
 ## ZigZag — внутренний модуль
 

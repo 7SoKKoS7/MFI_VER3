@@ -14,70 +14,48 @@ int MFV_TFIndex(ENUM_TIMEFRAMES tf){
 
 int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, int rates_total, int prev_calculated)
 {
-   const int currentTFIndex = MFV_TFIndex(chart_tf);
-   if(currentTFIndex < 0) return rates_total;
-
-   // Массив whitelisted TF в фиксированном порядке
+   const int curIdx = MFV_TFIndex(chart_tf);    // может быть -1 (не из WL)
    const ENUM_TIMEFRAMES WL[5] = { PERIOD_M5, PERIOD_M15, PERIOD_H1, PERIOD_H4, PERIOD_D1 };
-   
-   int totalExtrema = 0;
-   int totalOverlays = 0;
-   
-   // Цикл по всем WL-TF: для каждого
-   for(int i = 0; i < 5; ++i) {
-      ENUM_TIMEFRAMES tf = WL[i];
-      
-      // Взять MF-параметры
-      int zzDepth, zzDev, zzBack;
-      MFV_ZZ_ParamsForTF(tf, zzDepth, zzDev, zzBack);
 
-      // Подготовить локальные массивы
-      int idx[512]; 
-      double prc[512]; 
-      int cnt = 0;
-      
-      // Вызвать ZigZag
-      if(MFV_ZZ_FindExtrema(symbol, tf, zzDepth, zzDev, zzBack, cnt, idx, prc)) {
-         // Передать в PivotEngine
+   // 1) ВСЕГДА считаем пивоты для всех WL-TF (даже если текущий TF не из WL)
+   for (int i=0; i<5; ++i) {
+      int zzDepth, zzDev, zzBack;
+      MFV_ZZ_ParamsForTF(WL[i], zzDepth, zzDev, zzBack);
+      int cnt=0, idx[512]; double prc[512];
+      if (MFV_ZZ_FindExtrema(symbol, WL[i], zzDepth, zzDev, zzBack, cnt, idx, prc))
          MFV_Pivot_UpdateTF(i, idx, prc, cnt, st);
-         totalExtrema += cnt;
-         
-         // Логировать коротко
-         if(Debug_Log) PrintFormat("MFV.ZZ %s: extrema=%d", EnumToString(tf), cnt);
-      } else {
-         // Очистить флаги пивотов при ошибке
-         st.piv[i].hasHigh = false;
-         st.piv[i].hasLow = false;
-         st.piv[i].hasMid = false;
+      else {
+         st.piv[i].hasHigh=false; st.piv[i].hasLow=false; st.piv[i].hasMid=false;
+      }
+      
+      // Диагностика (когда Mid вдруг «теряется»)
+      if(Debug_Log){
+         PrintFormat("PIV %s: H?%d L?%d M?%d  H=%.5f L=%.5f M=%.5f",
+                    EnumToString(WL[i]), (int)st.piv[i].hasHigh, (int)st.piv[i].hasLow, (int)st.piv[i].hasMid,
+                    st.piv[i].high, st.piv[i].low, st.piv[i].mid);
       }
    }
 
-   // Отрисовка
-   if(ShowPivotsOnChart) {
-      // Всегда рисовать линии текущего TF
-      MFV_Draw_PivotsTF(currentTFIndex, st.piv[currentTFIndex], false);
-      
-      // Если включен оверлей и не только текущий ТФ
-      if(PivotsChart_ShowMulti && !PivotsChart_TFOnly) {
-         for(int i = 0; i < 5; ++i) {
-            if(i != currentTFIndex) { // Пропускаем текущий ТФ
-               MFV_Draw_PivotsOverlay(i, st.piv[i]);
-               totalOverlays++;
-            }
+   // 2) Рисование
+   if (ShowPivotsOnChart) {
+      // линии текущего TF рисуем ТОЛЬКО если он из WL и включен режим "только текущий"
+      if (curIdx>=0 && PivotsChart_TFOnly)
+         MFV_Draw_PivotsTF(curIdx, st.piv[curIdx], false);
+
+      // оверлей всех WL-ТФ (если включен). Если TFOnly=false — поверх добавим остальные.
+      if (PivotsChart_ShowMulti) {
+         for (int i=0; i<5; ++i) {
+            if (!PivotsChart_TFOnly || i!=curIdx)
+               MFV_Draw_PivotsOverlay(i, st.piv[i]);  // рисует H/L и, опционально, M
          }
       }
    } else {
-      // Удалить все объекты префикса
       MFV_Draw_ClearAll("MFV_PVT_");
    }
-   
-   // Логирование отрисовки
-   if(Debug_Log) PrintFormat("MFV.DRAW: cur=%s overlays=%d", EnumToString(chart_tf), totalOverlays);
-   
-   // Обновляем панель
-   MFV_Panel_DrawAll(st, Panel_Show_M5, Panel_Show_M15, Panel_Show_H1, Panel_Show_H4, Panel_Show_D1);
+
+   // 3) Панель — ВСЕГДА, на любом TF
+   MFV_Panel_DrawAll(st, true, true, true, true, true);
    MFV_Draw_UpdateChart();
-   
    return rates_total;
 }
 

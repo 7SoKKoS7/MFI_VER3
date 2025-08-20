@@ -12,35 +12,26 @@ void MFV_Draw_ClearAll(const string prefix)
    }
 }
 
-void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay = false)
+void MFV_HLine(const string name, const double price, const int width, const ENUM_LINE_STYLE style, const color clr)
+{
+   ObjectDelete(0, name);
+   ObjectCreate(0, name, OBJ_HLINE, 0, 0, price);
+   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
+   ObjectSetInteger(0, name, OBJPROP_WIDTH, width);
+   ObjectSetInteger(0, name, OBJPROP_STYLE, style);
+   ObjectSetInteger(0, name, OBJPROP_BACK, false);
+}
+
+void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay)
 { 
    if(!ShowPivotsOnChart) return;
    
-   // Определяем цвета и стили в зависимости от режима
-   color hColor, mColor, lColor;
-   int lineWidth;
-   ENUM_LINE_STYLE lineStyle;
-   
-   if(!isOverlay) {
-      // Основные цвета для текущего ТФ
-      hColor = PivotHColor;
-      mColor = PivotMColor;
-      lColor = PivotLColor;
-      lineWidth = PivotLineWidth;
-      lineStyle = PivotLineStyle;
-   } else {
-      // Цвета оверлея в зависимости от ТФ
-      switch(tfIndex) {
-         case 0: hColor = mColor = lColor = Overlay_M5_Color; break;   // M5
-         case 1: hColor = mColor = lColor = Overlay_M15_Color; break;  // M15
-         case 2: hColor = mColor = lColor = Overlay_H1_Color; break;   // H1
-         case 3: hColor = mColor = lColor = Overlay_H4_Color; break;   // H4
-         case 4: hColor = mColor = lColor = Overlay_D1_Color; break;   // D1
-         default: return;
-      }
-      lineWidth = Overlay_LineWidth;
-      lineStyle = Overlay_LineStyle;
-   }
+   // Определяем цвета и стили для текущего ТФ
+   color hColor = PivotHColor;
+   color mColor = PivotMColor;
+   color lColor = PivotLColor;
+   int lineWidth = PivotLineWidth;
+   ENUM_LINE_STYLE lineStyle = PivotLineStyle;
    
    // Формируем имена объектов
    string tfName;
@@ -54,51 +45,26 @@ void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay =
    }
    
    string objPrefix = "MFV_PVT_" + Symbol() + "_" + tfName + "_";
-   if(isOverlay) objPrefix += "OVL_";
-   
-   // Проверяем наличие пивотов
-   if(!pv.hasHigh && !pv.hasLow && !pv.hasMid) {
-      Print("MFV.Draw: no pivots for TF ", tfName, " (skip)");
-      // Удаляем старые объекты
-      ObjectDelete(0, objPrefix + "H");
-      ObjectDelete(0, objPrefix + "M");
-      ObjectDelete(0, objPrefix + "L");
-      return;
-   }
    
    // Рисуем линии пивотов
    if(pv.hasHigh) {
       string objName = objPrefix + "H";
-      ObjectDelete(0, objName); // Удаляем старый объект
-      ObjectCreate(0, objName, OBJ_HLINE, 0, 0, pv.high);
-      ObjectSetInteger(0, objName, OBJPROP_COLOR, hColor);
-      ObjectSetInteger(0, objName, OBJPROP_WIDTH, lineWidth);
-      ObjectSetInteger(0, objName, OBJPROP_STYLE, lineStyle);
-      ObjectSetInteger(0, objName, OBJPROP_BACK, false);
+      MFV_HLine(objName, pv.high, lineWidth, lineStyle, hColor);
    } else {
       ObjectDelete(0, objPrefix + "H");
    }
    
-   if(pv.hasMid) {
+   // для текущего ТФ Mid рисуется, когда Chart_ShowMid_CurrentTF == true и pv.hasMid == true
+   if(pv.hasMid && Chart_ShowMid_CurrentTF) {
       string objName = objPrefix + "M";
-      ObjectDelete(0, objName); // Удаляем старый объект
-      ObjectCreate(0, objName, OBJ_HLINE, 0, 0, pv.mid);
-      ObjectSetInteger(0, objName, OBJPROP_COLOR, mColor);
-      ObjectSetInteger(0, objName, OBJPROP_WIDTH, lineWidth);
-      ObjectSetInteger(0, objName, OBJPROP_STYLE, lineStyle);
-      ObjectSetInteger(0, objName, OBJPROP_BACK, false);
+      MFV_HLine(objName, pv.mid, lineWidth, lineStyle, mColor);
    } else {
       ObjectDelete(0, objPrefix + "M");
    }
    
    if(pv.hasLow) {
       string objName = objPrefix + "L";
-      ObjectDelete(0, objName); // Удаляем старый объект
-      ObjectCreate(0, objName, OBJ_HLINE, 0, 0, pv.low);
-      ObjectSetInteger(0, objName, OBJPROP_COLOR, lColor);
-      ObjectSetInteger(0, objName, OBJPROP_WIDTH, lineWidth);
-      ObjectSetInteger(0, objName, OBJPROP_STYLE, lineStyle);
-      ObjectSetInteger(0, objName, OBJPROP_BACK, false);
+      MFV_HLine(objName, pv.low, lineWidth, lineStyle, lColor);
    } else {
       ObjectDelete(0, objPrefix + "L");
    }
@@ -106,7 +72,28 @@ void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay =
 
 void MFV_Draw_PivotsOverlay(const int tfIndex, const MFV_Pivots &pv)
 {
-   MFV_Draw_PivotsTF(tfIndex, pv, true);
+   if (!pv.hasHigh && !pv.hasLow && !pv.hasMid) return;
+   string tf = (tfIndex==0?"M5":tfIndex==1?"M15":tfIndex==2?"H1":tfIndex==3?"H4":"D1");
+
+   // H
+   if (pv.hasHigh) {
+      string n = StringFormat("MFV_PVT_OVR_%s_H", tf);
+      MFV_HLine(n, pv.high, Overlay_LineWidth, Overlay_LineStyle, 
+                (tfIndex==0?Overlay_M5_Color:tfIndex==1?Overlay_M15_Color:tfIndex==2?Overlay_H1_Color:tfIndex==3?Overlay_H4_Color:Overlay_D1_Color));
+   } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_H", tf));
+
+   // для оверлея Mid рисуется, когда Chart_ShowMid_Overlay == true, PivotsChart_ShowMulti == true, PivotsChart_TFOnly == false и pv.hasMid == true
+   if (pv.hasMid && Chart_ShowMid_Overlay && PivotsChart_ShowMulti && !PivotsChart_TFOnly) {
+      string n = StringFormat("MFV_PVT_OVR_%s_M", tf);
+      MFV_HLine(n, pv.mid, Overlay_LineWidth, Overlay_LineStyle, Panel_TextColor);
+   } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_M", tf));
+
+   // L
+   if (pv.hasLow) {
+      string n = StringFormat("MFV_PVT_OVR_%s_L", tf);
+      MFV_HLine(n, pv.low, Overlay_LineWidth, Overlay_LineStyle, 
+                (tfIndex==0?Overlay_M5_Color:tfIndex==1?Overlay_M15_Color:tfIndex==2?Overlay_H1_Color:tfIndex==3?Overlay_H4_Color:Overlay_D1_Color));
+   } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_L", tf));
 }
 
 void MFV_Draw_UpdateChart()

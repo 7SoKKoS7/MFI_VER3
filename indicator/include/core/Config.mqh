@@ -33,32 +33,27 @@ input int ZZ_Manual_Depth     = 12;
 input int ZZ_Manual_Deviation = 5;
 input int ZZ_Manual_Backstep  = 3;
 
-// === Pivots Visualization ===
-input bool  ShowPivotsOnChart     = true;   // рисовать H/M/L текущего TF
-input bool  PivotsChart_TFOnly    = true;   // если true — рисуем только текущий TF
-input bool  PivotsChart_ShowMulti = false;  // если true — поверх текущего TF рисуем whitelist TF
-
-// Панель — какие TF отображать
-input bool Panel_Show_M5  = true;
-input bool Panel_Show_M15 = true;
-input bool Panel_Show_H1  = true;
-input bool Panel_Show_H4  = true;
-input bool Panel_Show_D1  = true;
-
 // === Panel look & feel ===
-input int   Panel_FontSize      = 11;          // размер шрифта панели по умолчанию
-input color Panel_TextColor     = clrWhite;    // цвет текста панели
-input int   Panel_TopOffsetPx   = 26;          // отступ от верхнего левого угла, чтобы не перекрывать служебный заголовок
-input int   Panel_LineSpacingPx = 4;           // дополнительный межстрочный интервал (px)
+input string Panel_FontName    = "Consolas";    // моноширинный для ровных колонок
+input int   Panel_FontSize      = 11;        // 8..28
+input color Panel_TextColor     = clrWhite;
+input int   Panel_TopOffsetPx   = 26;        // от бордюра терминала
+input int   Panel_LineSpacingPx = 4;         // доп. межстрочный интервал
+input bool  Panel_ShowMid       = true;      // показывать M=... в строках панели
+input bool  Panel_ShowEarly     = false;     // eH/eL для текущего ТФ (опц.)
 
-// === Debug ===
-input bool  Debug_Log = false;                 // печатать диагностику в "Эксперты"
+// === Chart drawing ===
+input bool  ShowPivotsOnChart        = true;
+input bool  PivotsChart_TFOnly       = true;   // только текущий ТФ
+input bool  PivotsChart_ShowMulti    = false;  // overlay всех WL-ТФ
+input bool  Chart_ShowMid_CurrentTF  = true;   // Mid для текущего ТФ
+input bool  Chart_ShowMid_Overlay    = false;  // Mid для overlay
 
 // Цвета текущего TF
 input color PivotHColor = clrRed;
 input color PivotMColor = clrDarkGray;
 input color PivotLColor = clrLime;
-input int   PivotLineWidth  = 1;
+input int   PivotLineWidth = 1;
 input ENUM_LINE_STYLE PivotLineStyle = STYLE_DASHDOT;
 
 // Цвета оверлея (если PivotsChart_ShowMulti=true)
@@ -69,5 +64,18 @@ input color Overlay_H4_Color  = clrMediumSeaGreen;
 input color Overlay_D1_Color  = clrViolet;
 input int   Overlay_LineWidth  = 1;
 input ENUM_LINE_STYLE Overlay_LineStyle = STYLE_DOT;
+
+// === Early pivot (только текущий TF) ===
+input bool  EP_Enable          = false;
+input bool  EP_OnCurrentTFOnly = true;    // зафиксировать «только текущий ТФ»
+input int   EP_MinRetracePips  = 0;       // если >0 — порог в пунктах
+input double EP_MinRetraceATR  = 0.25;    // если >0 — порог = k*ATR(14)
+input color EP_H_Color         = clrDodgerBlue;
+input color EP_L_Color         = clrDeepPink;
+input ENUM_LINE_STYLE EP_LineStyle = STYLE_DOT;
+input int   EP_LineWidth       = 1;
+
+// === Debug ===
+input bool  Debug_Log          = false;   // Печать в «Эксперты» только при true
 
 #endif // __MFV_CONFIG_MQH__
