@@ -36,7 +36,13 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
       }
    }
 
-   // 2) Рисование
+   // 2) Расчет трендов для всех WL-TF
+   for(int i=0; i<5; i++){
+      MFV_Trend_FromPivots(symbol, WL[i], st.piv[i], st.trends[i],
+                           Trend_TolPoints, Trend_TolATRk, DirNow_EpsPct);
+   }
+
+   // 3) Рисование
    if (ShowPivotsOnChart) {
       // линии текущего TF рисуем ТОЛЬКО если он из WL и включен режим "только текущий"
       if (curIdx>=0 && PivotsChart_TFOnly)
@@ -53,7 +59,7 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
       MFV_Draw_ClearAll("MFV_PVT_");
    }
 
-   // 3) Панель — ВСЕГДА, на любом TF
+   // 4) Панель — ВСЕГДА, на любом TF
    MFV_Panel_DrawAll(st, true, true, true, true, true);
    MFV_Draw_UpdateChart();
    return rates_total;

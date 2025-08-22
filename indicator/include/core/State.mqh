@@ -4,7 +4,7 @@
 
 struct MFV_State
 {
-   MFV_Trend trends[5];
+   MFV_TrendInfo trends[5];
    MFV_Pivots piv[5];
    MFV_Reason lastReason[5];
 };

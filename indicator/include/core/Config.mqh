@@ -33,6 +33,15 @@ input int ZZ_Manual_Depth     = 12;
 input int ZZ_Manual_Deviation = 5;
 input int ZZ_Manual_Backstep  = 3;
 
+// === Trend & Direction (panel) ===
+input bool   Panel_Show_Trend   = true;
+input bool   Panel_Show_DirNow  = true;
+
+// Параметры допусков
+input int    Trend_TolPoints    = 0;     // минимальный допуск в пунктах
+input double Trend_TolATRk      = 0.25;  // k для k*ATR(14)
+input double DirNow_EpsPct      = 0.10;  // dead-zone как доля (H-L)
+
 // === Panel look & feel ===
 input string Panel_FontName    = "Consolas";    // моноширинный для ровных колонок
 input int   Panel_FontSize      = 11;        // 8..28

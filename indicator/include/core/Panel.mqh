@@ -41,9 +41,48 @@ string MFV_PivotLine(const string tf3, const MFV_Pivots &pv, const bool showMid)
    return StringFormat("Pivot %s: (no data)", tf3);
 }
 
+string MFV_ArrowTrend(MFV_Trend t) {
+  // ▲▼ или ↕ / = — выбери символы, которые уже использовались; без Unicode, если политика проекта такая
+  if(t==MFV_Trend_Up)   return "↑";
+  if(t==MFV_Trend_Down) return "↓";
+  return "-";
+}
+
+string MFV_ArrowDirNow(MFV_DirNow d){
+  if(d==MFV_DIRNOW_UP)   return "↑";
+  if(d==MFV_DIRNOW_DOWN) return "↓";
+  if(d==MFV_DIRNOW_NEUTRAL) return "=";
+  return "?";
+}
+
 void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool showH1, bool showH4, bool showD1){
    int row = 0;
    int y   = Panel_TopOffsetPx; // отступ вниз от шапки терминала
+
+   // 1) Сначала Trend и DirectionNow
+   if(Panel_Show_Trend) {
+      string trendLine = "Trend: ";
+      for(int i = 0; i < 5; i++) {
+         string arrow = st.trends[i].valid ? MFV_ArrowTrend(st.trends[i].trend) : "?";
+         trendLine += StringFormat("%s %s", TF3[i], arrow);
+         if(i < 4) trendLine += " ";
+      }
+      MFV_Panel_PutRow(row++, trendLine, y);
+      y += Panel_FontSize + Panel_LineSpacingPx;
+   }
+   
+   if(Panel_Show_DirNow) {
+      string dirNowLine = "Now:   "; // добавляем два пробела для выравнивания с "Trend:"
+      for(int i = 0; i < 5; i++) {
+         string arrow = st.trends[i].valid ? MFV_ArrowDirNow(st.trends[i].dirNow) : "?";
+         dirNowLine += StringFormat("%s %s", TF3[i], arrow);
+         if(i < 4) dirNowLine += " ";
+      }
+      MFV_Panel_PutRow(row++, dirNowLine, y);
+      y += Panel_FontSize + Panel_LineSpacingPx;
+   }
+
+   // 2) Потом Pivots
    MFV_Panel_PutRow(row++,"=== MFV Pivots ===", y);
    y += Panel_FontSize + Panel_LineSpacingPx;
 
