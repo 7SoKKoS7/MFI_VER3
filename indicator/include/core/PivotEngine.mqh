@@ -1,7 +1,7 @@
 #ifndef __MFV_PIVOTENGINE_MQH__
 #define __MFV_PIVOTENGINE_MQH__
 
-bool MFV_Pivot_UpdateTF(const int tfIndex,
+bool MFV_Pivot_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, const int tfIndex,
                         const int &zzIdx[], const double &zzPrice[], const int count,
                         MFV_State &st)
 {
@@ -32,11 +32,11 @@ bool MFV_Pivot_UpdateTF(const int tfIndex,
    // ADDED (set pivot birth times)
    // Получаем время рождения пивотов из индексов ZigZag
    if(hiIdx >= 0 && hiIdx < count) {
-      datetime hiTime = iTime(Symbol(), Period(), zzIdx[hiIdx]);
+      datetime hiTime = iTime(symbol, tf, zzIdx[hiIdx]);
       st.piv[tfIndex].highTime = hiTime;
    }
    if(loIdx >= 0 && loIdx < count) {
-      datetime loTime = iTime(Symbol(), Period(), zzIdx[loIdx]);
+      datetime loTime = iTime(symbol, tf, zzIdx[loIdx]);
       st.piv[tfIndex].lowTime = loTime;
    }
    

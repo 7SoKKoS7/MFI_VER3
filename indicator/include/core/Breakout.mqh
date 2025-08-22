@@ -17,6 +17,28 @@ int BO_AgeLimitSec(ENUM_TIMEFRAMES tf)
    }
 }
 
+// Вспомогательные функции для корректной работы с временем
+datetime BO_TNow(const string s, ENUM_TIMEFRAMES tf)
+{
+   datetime t[]; ArraySetAsSeries(t, true);
+   if (CopyTime(s, tf, 1, 1, t) == 1) return t[0]; // время ПОСЛЕДНЕГО ЗАКРЫТОГО бара TF
+   return TimeCurrent();
+}
+
+int BO_PeriodSecondsSafe(ENUM_TIMEFRAMES tf)
+{
+   int ps = PeriodSeconds(tf);
+   if (ps > 0) return ps;
+   switch(tf){
+      case PERIOD_M5:  return 300;
+      case PERIOD_M15: return 900;
+      case PERIOD_H1:  return 3600;
+      case PERIOD_H4:  return 14400;
+      case PERIOD_D1:  return 86400;
+      default:         return 60;
+   }
+}
+
 // Обновить состояние пробоя и ретеста для одного TF
 bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
                            const MFV_Pivots &pv, const MFV_TrendInfo &trend,
@@ -104,54 +126,47 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
       if(gotC>=2 && gotT==gotC)
       {
          // IMPROVED (find MOST RECENT valid cross, respect pivot birth and age limits)
-         int lastValidIdx = -1;
-         for(int i=1; i<gotC; ++i) // ищем САМОЕ ПОСЛЕДНЕЕ пересечение (старый→новый)
+         int ageLimit = BO_AgeLimitSec(tf);
+         int pick = -1;
+         
+         // хотим САМЫЙ НОВЫЙ валидный кросс → идём NEW→OLD: i=1..gotC-1
+         for (int i = 1; i < gotC; ++i)  // 0 — самый новый бар, поэтому стартуем с 1
          {
-            bool up   = (cc[i] <= H + tol) && (cc[i-1] >  H + tol);
-            bool down = (cc[i] >= L - tol) && (cc[i-1] <  L - tol);
-            
-            if(up || down) {
-               datetime tBreak = tt[i-1]; // время свечи пробоя
-               
-               // Проверяем возраст пробоя
-               if(BO_BootstrapOnlyRecent) {
-                  int maxAgeSec = BO_AgeLimitSec(tf);
-                  if(maxAgeSec > 0 && (TimeCurrent() - tBreak) > maxAgeSec) {
-                     continue; // пробой слишком старый
-                  }
-               }
-               
-               // Проверяем, что пробой произошел ПОСЛЕ рождения пивота
-               if(up && pv.hasHigh && pv.highTime > 0 && tBreak < pv.highTime) {
-                  continue; // PH еще не родился
-               }
-               if(down && pv.hasLow && pv.lowTime > 0 && tBreak < pv.lowTime) {
-                  continue; // PL еще не родился
-               }
-               
-               lastValidIdx = i-1; // запоминаем индекс, но продолжаем искать более новый
-            }
+            bool up   = (cc[i]   <= H + tol) && (cc[i-1] >  H + tol);
+            bool down = (cc[i]   >= L - tol) && (cc[i-1] <  L - tol);
+            if (!(up || down)) continue;
+
+            datetime tBreak = tt[i-1];
+
+            // пробой не раньше «рождения» соответствующего пивота
+            if (up   && pv.hasHigh && pv.highTime > 0 && tBreak < pv.highTime) continue;
+            if (down && pv.hasLow  && pv.lowTime  > 0 && tBreak < pv.lowTime)  continue;
+
+            // лимит свежести по TF
+            if (ageLimit > 0 && (BO_TNow(symbol, tf) - tBreak) > ageLimit) continue;
+
+            pick = i-1;               // бар пробоя
+            break;                    // это САМЫЙ НОВЫЙ валидный
          }
          
-         if(lastValidIdx >= 0) {
-            int i = lastValidIdx;
-            bool up = (cc[i+1] <= H + tol) && (cc[i] > H + tol);
-            bool down = (cc[i+1] >= L - tol) && (cc[i] < L - tol);
-            
+         if (pick != -1)
+         {
+            bool up   = (cc[pick+1] <= H + tol) && (cc[pick] >  H + tol);
+            bool down = (cc[pick+1] >= L - tol) && (cc[pick] <  L - tol);
+
             bo.hasBreak   = true;
             bo.dir        = up ? +1 : -1;
-            bo.level      = up ? H : L;    // ровно PH/PL
-            bo.barTime    = tt[i];         // время свечи пробоя
-            bo.priceBO    = cc[i];
+            bo.level      = up ? H : L;
+            bo.barTime    = tt[pick];     // время свечи пробоя
+            bo.priceBO    = cc[pick];
             bo.rtest      = MFV_RTEST_WAIT;
-            
-            // IMPROVED (compute real age in bars)
-            bo.barsSinceBO = (int)MathFloor((TimeCurrent() - bo.barTime) / PeriodSeconds(tf));
-            
-            if(Debug_Log) {
-               PrintFormat("BO BOOTSTRAP %s %s: dir=%d level=%.5f bar=%I64d ageBars=%d", 
-                          symbol, EnumToString(tf), bo.dir, bo.level, (long)bo.barTime, bo.barsSinceBO);
-            }
+
+            int ps = BO_PeriodSecondsSafe(tf);
+            bo.barsSinceBO = (int)MathMax(0, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+
+            if (Debug_Log)
+               PrintFormat("BO BOOTSTRAP %s %s: dir=%d level=%.5f bar=%I64d ageBars=%d",
+                           symbol, EnumToString(tf), bo.dir, bo.level, (long)bo.barTime, bo.barsSinceBO);
          }
       }
    }
@@ -159,8 +174,12 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
    // Если нет активного пробоя - выходим
    if(!bo.hasBreak) return false;
 
-   // IMPROVED (recompute barsSinceBO from barTime)
-   bo.barsSinceBO = (int)MathFloor((TimeCurrent() - bo.barTime) / PeriodSeconds(tf));
+   // IMPROVED (recompute barsSinceBO from barTime only if breakout is active)
+   if (bo.hasBreak)
+   {
+      int ps = BO_PeriodSecondsSafe(tf);
+      bo.barsSinceBO = (int)MathMax(bo.barsSinceBO, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+   }
 
    // Четкие условия ретеста/провала
    bool touched = (MathAbs(c1 - bo.level) <= tol);               // ретест ОК

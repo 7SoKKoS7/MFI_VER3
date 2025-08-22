@@ -23,7 +23,7 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
       MFV_ZZ_ParamsForTF(WL[i], zzDepth, zzDev, zzBack);
       int cnt=0, idx[512]; double prc[512];
       if (MFV_ZZ_FindExtrema(symbol, WL[i], zzDepth, zzDev, zzBack, cnt, idx, prc))
-         MFV_Pivot_UpdateTF(i, idx, prc, cnt, st);
+         MFV_Pivot_UpdateTF(symbol, WL[i], i, idx, prc, cnt, st);
       else {
          st.piv[i].hasHigh=false; st.piv[i].hasLow=false; st.piv[i].hasMid=false;
       }
