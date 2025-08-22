@@ -55,6 +55,19 @@ string MFV_ArrowDirNow(MFV_DirNow d){
   return "?";
 }
 
+string MFV_ArrowBreakout(int dir) {
+  if(dir > 0) return "↑";
+  if(dir < 0) return "↓";
+  return "-";
+}
+
+string MFV_ArrowRTest(MFV_RTest rt) {
+  if(rt == MFV_RTEST_OK) return "✓";
+  if(rt == MFV_RTEST_FAIL) return "✗";
+  if(rt == MFV_RTEST_WAIT) return "…";
+  return "?";
+}
+
 void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool showH1, bool showH4, bool showD1){
    int row = 0;
    int y   = Panel_TopOffsetPx; // отступ вниз от шапки терминала
@@ -79,6 +92,29 @@ void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool show
          if(i < 4) dirNowLine += " ";
       }
       MFV_Panel_PutRow(row++, dirNowLine, y);
+      y += Panel_FontSize + Panel_LineSpacingPx;
+   }
+
+   // 2) Breakout и Retest
+   if(Panel_ShowBreakout) {
+      string breakoutLine = "BO:    ";
+      for(int i = 0; i < 5; i++) {
+         string arrow = st.breakouts[i].hasBreak ? MFV_ArrowBreakout(st.breakouts[i].dir) : "-";
+         breakoutLine += StringFormat("%s %s", TF3[i], arrow);
+         if(i < 4) breakoutLine += " ";
+      }
+      MFV_Panel_PutRow(row++, breakoutLine, y);
+      y += Panel_FontSize + Panel_LineSpacingPx;
+   }
+
+   if(Panel_ShowRTest) {
+      string rtestLine = "RTest: ";
+      for(int i = 0; i < 5; i++) {
+         string arrow = st.breakouts[i].hasBreak ? MFV_ArrowRTest(st.breakouts[i].rtest) : "-";
+         rtestLine += StringFormat("%s %s", TF3[i], arrow);
+         if(i < 4) rtestLine += " ";
+      }
+      MFV_Panel_PutRow(row++, rtestLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
 

@@ -19,13 +19,26 @@ bool MFV_Pivot_UpdateTF(const int tfIndex,
    // Берём окно последних K (= min(40, count)) точек ZigZag и считаем H/L
    int K = MathMin(40, count), start = count - K;
    double hi = zzPrice[start], lo = zzPrice[start];
+   int hiIdx = start, loIdx = start; // индексы для определения времени рождения
+   
    for(int i = start; i < count; ++i) {
-      if(zzPrice[i] > hi) hi = zzPrice[i];
-      if(zzPrice[i] < lo) lo = zzPrice[i];
+      if(zzPrice[i] > hi) { hi = zzPrice[i]; hiIdx = i; }
+      if(zzPrice[i] < lo) { lo = zzPrice[i]; loIdx = i; }
    }
 
    st.piv[tfIndex].high = hi;  st.piv[tfIndex].hasHigh = true;
    st.piv[tfIndex].low  = lo;  st.piv[tfIndex].hasLow  = true;
+   
+   // ADDED (set pivot birth times)
+   // Получаем время рождения пивотов из индексов ZigZag
+   if(hiIdx >= 0 && hiIdx < count) {
+      datetime hiTime = iTime(Symbol(), Period(), zzIdx[hiIdx]);
+      st.piv[tfIndex].highTime = hiTime;
+   }
+   if(loIdx >= 0 && loIdx < count) {
+      datetime loTime = iTime(Symbol(), Period(), zzIdx[loIdx]);
+      st.piv[tfIndex].lowTime = loTime;
+   }
    
    // Mid считаем всегда, флаг выставляем явно
    if(st.piv[tfIndex].hasHigh && st.piv[tfIndex].hasLow){

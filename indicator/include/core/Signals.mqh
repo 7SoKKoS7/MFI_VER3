@@ -42,6 +42,11 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
                            Trend_TolPoints, Trend_TolATRk, DirNow_EpsPct);
    }
 
+   // 3) Расчет пробоев и ретестов для всех WL-TF
+   for(int i=0; i<5; i++){
+      MFV_Breakout_UpdateTF(symbol, WL[i], i, st.piv[i], st.trends[i], st.breakouts[i]);
+   }
+
    // 3) Рисование
    if (ShowPivotsOnChart) {
       // линии текущего TF рисуем ТОЛЬКО если он из WL и включен режим "только текущий"
@@ -57,6 +62,11 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
       }
    } else {
       MFV_Draw_ClearAll("MFV_PVT_");
+   }
+
+   // Рисование маркеров Breakout для всех WL-TF
+   for (int i=0; i<5; ++i) {
+      MFV_Draw_BreakoutMarkers(i, st.breakouts[i]);
    }
 
    // 4) Панель — ВСЕГДА, на любом TF

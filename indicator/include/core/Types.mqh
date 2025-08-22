@@ -21,6 +21,23 @@ struct MFV_TrendInfo {
 
 #endif // __MFV_TYPES_TREND_BLOCK__
 
+#ifndef __MFV_TYPES_BREAKOUT_BLOCK__
+#define __MFV_TYPES_BREAKOUT_BLOCK__
+
+enum MFV_RTest { MFV_RTEST_WAIT=0, MFV_RTEST_OK, MFV_RTEST_FAIL };
+
+struct MFV_BreakoutInfo {
+  bool       hasBreak;    // есть ли активный пробой
+  int        dir;         // направление пробоя (1=up, -1=down)
+  double     level;       // уровень пробоя (PH или PL)
+  datetime   barTime;     // время бара пробоя
+  double     priceBO;     // цена на баре пробоя
+  MFV_RTest  rtest;       // состояние ретеста
+  int        barsSinceBO; // количество баров с момента пробоя
+};
+
+#endif // __MFV_TYPES_BREAKOUT_BLOCK__
+
 struct MFV_Pivots 
 { 
    double high; 
@@ -29,6 +46,8 @@ struct MFV_Pivots
    bool hasHigh; 
    bool hasLow; 
    bool hasMid; 
+   datetime highTime; // время рождения PH (когда был подтвержден)
+   datetime lowTime;  // время рождения PL (когда был подтвержден)
 };
 
 #endif // __MFV_TYPES_MQH__

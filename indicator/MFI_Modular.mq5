@@ -36,6 +36,7 @@ void OnDeinit(const int reason)
    // Очищаем панель и линии при деинициализации
    MFV_Panel_Destroy();
    MFV_Draw_ClearAll("MFV_PVT_");
+   MFV_Draw_ClearBreakoutMarkers("MFV_BO_");
 }
 
 int OnCalculate(const int rates_total,const int prev_calculated,const int begin,const double &price[])

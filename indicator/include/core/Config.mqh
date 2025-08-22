@@ -42,6 +42,33 @@ input int    Trend_TolPoints    = 0;     // минимальный допуск 
 input double Trend_TolATRk      = 0.25;  // k для k*ATR(14)
 input double DirNow_EpsPct      = 0.10;  // dead-zone как доля (H-L)
 
+// === Breakout & Retest (panel) ===
+input bool   Panel_ShowBreakout = true;  // показывать строку Breakout
+input bool   Panel_ShowRTest    = true;  // показывать строку Retest
+input int    RTest_MaxBars      = 10;    // максимальное количество баров для ретеста
+
+// === Breakout bootstrap from history ===
+input bool BO_BootstrapFromHistory = true;   // искать последний реальный пробой в истории
+input int  BO_BootstrapLookback    = 300;    // сколько закрытых баров просканировать
+input bool BO_BootstrapOnlyRecent  = true;   // только недавние пробои (по MaxAgeHours)
+
+// Максимальный возраст пробоя для bootstrap (в часах)
+input int BO_BootstrapMaxAgeHours_M5  = 6;   // 6 часов для M5
+input int BO_BootstrapMaxAgeHours_M15 = 12;  // 12 часов для M15
+input int BO_BootstrapMaxAgeHours_H1  = 48;  // 48 часов для H1
+input int BO_BootstrapMaxAgeHours_H4  = 168; // 168 часов (7 дней) для H4
+input int BO_BootstrapMaxAgeHours_D1  = 720; // 720 часов (30 дней) для D1
+
+// === Breakout markers look & feel ===
+input int   BO_ArrowFontSize      = 10;  // размер стрелки пробоя (OBJ_TEXT), по умолчанию меньше
+input color BO_ArrowColorUp       = clrLime;
+input color BO_ArrowColorDn       = clrRed;
+input int   BO_StatusYOffsetPoints= 10;  // смещение статуса ретеста по цене (в пунктах) от уровня пробоя
+input color BO_StatusColorOK      = clrLime;
+input color BO_StatusColorFAIL    = clrRed;
+input color BO_StatusColorWAIT    = clrSilver;
+input color BO_StatusColorNONE    = clrDarkGray; // "—" нет ретеста по тайм-ауту
+
 // === Panel look & feel ===
 input string Panel_FontName    = "Consolas";    // моноширинный для ровных колонок
 input int   Panel_FontSize      = 11;        // 8..28

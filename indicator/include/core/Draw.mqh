@@ -101,4 +101,70 @@ void MFV_Draw_UpdateChart()
    ChartRedraw();
 }
 
+void MFV_Draw_BreakoutMarkers(const int tfIndex, const MFV_BreakoutInfo &bo)
+{
+   // Если нет пробоя — удалить прежние объекты этого TF и выйти
+   string tfName = (tfIndex==0?"M5":tfIndex==1?"M15":tfIndex==2?"H1":tfIndex==3?"H4":"D1");
+   string prefix = "MFV_BO_" + Symbol() + "_" + tfName + "_";
+   string nameArrow  = prefix + "AR";
+   string nameStatus = prefix + "ST";
+
+   if(!bo.hasBreak || bo.barTime==0 || bo.level==0.0){
+      ObjectDelete(0, nameArrow);
+      ObjectDelete(0, nameStatus);
+      return;
+   }
+
+   // 1) Стрелка — OBJ_TEXT в координатах (время пробоя, уровень пробоя)
+   if(ObjectFind(0, nameArrow) < 0)
+      ObjectCreate(0, nameArrow, OBJ_TEXT, 0, bo.barTime, bo.level);
+   else
+      ObjectMove(0, nameArrow, 0, bo.barTime, bo.level);
+
+   const string ch = (bo.dir>0 ? "↑" : "↓"); // компактная стрелка
+   ObjectSetString (0, nameArrow,  OBJPROP_TEXT,      ch);
+   ObjectSetInteger(0, nameArrow,  OBJPROP_FONTSIZE,  BO_ArrowFontSize);
+   ObjectSetInteger(0, nameArrow,  OBJPROP_COLOR,     (bo.dir>0?BO_ArrowColorUp:BO_ArrowColorDn));
+   ObjectSetInteger(0, nameArrow,  OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0, nameArrow,  OBJPROP_BACK,      false);
+   ObjectSetInteger(0, nameArrow,  OBJPROP_ANCHOR,    ANCHOR_CENTER);
+
+   // 2) Статус ретеста — компактный символ рядом, со смещением по цене
+   //    WAIT: …   OK: ✓   FAIL: ✗   NONE: — (тайм-аут без ретеста)
+   double yOff = (BO_StatusYOffsetPoints>0 ? BO_StatusYOffsetPoints*Point() : 0);
+   double y    = bo.level + (bo.dir>0 ? +yOff : -yOff);
+
+   if(ObjectFind(0, nameStatus) < 0)
+      ObjectCreate(0, nameStatus, OBJ_TEXT, 0, bo.barTime, y);
+   else
+      ObjectMove(0, nameStatus, 0, bo.barTime, y);
+
+   string st;
+   color  sc;
+   switch(bo.rtest){
+      case MFV_RTEST_OK:   st="✓"; sc=BO_StatusColorOK;   break;
+      case MFV_RTEST_FAIL: st="✗"; sc=BO_StatusColorFAIL; break;
+      case MFV_RTEST_WAIT: st="…"; sc=BO_StatusColorWAIT; break;
+      case (MFV_RTest)(-1): st="—"; sc=BO_StatusColorNONE; break; // тайм-аут
+      default:             st="?"; sc=BO_StatusColorNONE; break; // неизвестный статус
+   }
+   ObjectSetString (0, nameStatus, OBJPROP_TEXT,      st);
+   ObjectSetInteger(0, nameStatus, OBJPROP_FONTSIZE,  MathMax(8, BO_ArrowFontSize-1));
+   ObjectSetInteger(0, nameStatus, OBJPROP_COLOR,     sc);
+   ObjectSetInteger(0, nameStatus, OBJPROP_SELECTABLE,false);
+   ObjectSetInteger(0, nameStatus, OBJPROP_BACK,      false);
+   ObjectSetInteger(0, nameStatus, OBJPROP_ANCHOR,    ANCHOR_CENTER);
+}
+
+void MFV_Draw_ClearBreakoutMarkers(const string prefix)
+{
+   // Удалить все объекты Breakout с именами, начинающимися с prefix
+   for(int i = ObjectsTotal(0, 0, OBJ_TEXT) - 1; i >= 0; --i) {
+      string objName = ObjectName(0, i, 0, OBJ_TEXT);
+      if(StringFind(objName, prefix) == 0) {
+         ObjectDelete(0, objName);
+      }
+   }
+}
+
 #endif // __MFV_DRAW_MQH__
