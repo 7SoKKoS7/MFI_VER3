@@ -26,7 +26,7 @@ void MFV_Panel_PutRow(const int row, const string text, const int y){
    }
    ObjectSetInteger(0,name,OBJPROP_YDISTANCE,y);
    ObjectSetInteger(0,name,OBJPROP_FONTSIZE,Panel_FontSize);
-   ObjectSetString (0,name,OBJPROP_FONT,Panel_FontName);
+   ObjectSetString (0,name,OBJPROP_FONT,"Consolas"); // Force monospaced font
    ObjectSetInteger(0,name,OBJPROP_COLOR,Panel_TextColor);
    ObjectSetString (0,name,OBJPROP_TEXT,text);
 }
@@ -41,8 +41,8 @@ string MFV_PivotLine(const string tf3, const MFV_Pivots &pv, const bool showMid)
    return StringFormat("Pivot %s: (no data)", tf3);
 }
 
+// Legacy helper functions (kept for compatibility)
 string MFV_ArrowTrend(MFV_Trend t) {
-  // ▲▼ или ↕ / = — выбери символы, которые уже использовались; без Unicode, если политика проекта такая
   if(t==MFV_Trend_Up)   return "↑";
   if(t==MFV_Trend_Down) return "↓";
   return "-";
@@ -68,58 +68,90 @@ string MFV_ArrowRTest(MFV_RTest rt) {
   return "?";
 }
 
+// Helper functions for fixed-width alignment
+string PadRight(const string s, const int w) {
+   string result = s;
+   while(StringLen(result) < w) result += " ";
+   return StringSubstr(result, 0, w); // ensure exact width
+}
+
+string Cell2_BO(const MFV_BreakoutInfo &bo) {
+   if(!bo.hasBreak) return "- ";
+   string a = (bo.dir>0) ? "↑" : "↓";
+   if(bo.strength == BO_Strong) return a + "S";
+   if(bo.strength == BO_Normal) return a + "N";
+   return a + " ";
+}
+
+string Cell2_Trend(const MFV_TrendInfo &tr) {
+   if(!tr.valid) return "? ";
+   if(tr.trend == MFV_Trend_Up) return "↑ ";
+   if(tr.trend == MFV_Trend_Down) return "↓ ";
+   return "- "; // Flat
+}
+
+string Cell2_Now(const MFV_TrendInfo &tr) {
+   if(!tr.valid) return "? ";
+   if(tr.dirNow == MFV_DIRNOW_UP) return "↑ ";
+   if(tr.dirNow == MFV_DIRNOW_DOWN) return "↓ ";
+   if(tr.dirNow == MFV_DIRNOW_NEUTRAL) return "= ";
+   return "? ";
+}
+
+string Cell2_RTest(const MFV_BreakoutInfo &bo) {
+   if(!bo.hasBreak) return "- ";
+   if(bo.rtest == MFV_RTEST_OK) return "✓ ";
+   if(bo.rtest == MFV_RTEST_FAIL) return "✗ ";
+   if(bo.rtest == MFV_RTEST_WAIT) return "… ";
+   return "? ";
+}
+
+string Col(const string tf3, const string cell2) {
+   return tf3 + " " + cell2; // "M5 " + " " + "↑S" = 6 chars total
+}
+
 void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool showH1, bool showH4, bool showD1){
    int row = 0;
    int y   = Panel_TopOffsetPx; // отступ вниз от шапки терминала
 
    // 1) Сначала Trend и DirectionNow
    if(Panel_Show_Trend) {
-      string trendLine = "Trend: ";
-      for(int i = 0; i < 5; i++) {
-         string arrow = st.trends[i].valid ? MFV_ArrowTrend(st.trends[i].trend) : "?";
-         trendLine += StringFormat("%s %s", TF3[i], arrow);
-         if(i < 4) trendLine += " ";
-      }
+      string trendLine = "Trend:  " + Col(TF3[0], Cell2_Trend(st.trends[0])) + " " + 
+                                      Col(TF3[1], Cell2_Trend(st.trends[1])) + " " +
+                                      Col(TF3[2], Cell2_Trend(st.trends[2])) + " " +
+                                      Col(TF3[3], Cell2_Trend(st.trends[3])) + " " +
+                                      Col(TF3[4], Cell2_Trend(st.trends[4]));
       MFV_Panel_PutRow(row++, trendLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
    
    if(Panel_Show_DirNow) {
-      string dirNowLine = "Now:   "; // добавляем два пробела для выравнивания с "Trend:"
-      for(int i = 0; i < 5; i++) {
-         string arrow = st.trends[i].valid ? MFV_ArrowDirNow(st.trends[i].dirNow) : "?";
-         dirNowLine += StringFormat("%s %s", TF3[i], arrow);
-         if(i < 4) dirNowLine += " ";
-      }
+      string dirNowLine = "Now:    " + Col(TF3[0], Cell2_Now(st.trends[0])) + " " + 
+                                       Col(TF3[1], Cell2_Now(st.trends[1])) + " " +
+                                       Col(TF3[2], Cell2_Now(st.trends[2])) + " " +
+                                       Col(TF3[3], Cell2_Now(st.trends[3])) + " " +
+                                       Col(TF3[4], Cell2_Now(st.trends[4]));
       MFV_Panel_PutRow(row++, dirNowLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
 
    // 2) Breakout и Retest
    if(Panel_ShowBreakout) {
-      string breakoutLine = "BO:    ";
-      for(int i = 0; i < 5; i++) {
-         string arrow = "-";
-         if(st.breakouts[i].hasBreak) {
-            arrow = MFV_ArrowBreakout(st.breakouts[i].dir);
-            // Добавляем индикатор силы
-            if(st.breakouts[i].strength == BO_Strong) arrow += "S";
-            else if(st.breakouts[i].strength == BO_Normal) arrow += "N";
-         }
-         breakoutLine += StringFormat("%s %s", TF3[i], arrow);
-         if(i < 4) breakoutLine += " ";
-      }
+      string breakoutLine = "BO:     " + Col(TF3[0], Cell2_BO(st.breakouts[0])) + " " + 
+                                         Col(TF3[1], Cell2_BO(st.breakouts[1])) + " " +
+                                         Col(TF3[2], Cell2_BO(st.breakouts[2])) + " " +
+                                         Col(TF3[3], Cell2_BO(st.breakouts[3])) + " " +
+                                         Col(TF3[4], Cell2_BO(st.breakouts[4]));
       MFV_Panel_PutRow(row++, breakoutLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
 
    if(Panel_ShowRTest) {
-      string rtestLine = "RTest: ";
-      for(int i = 0; i < 5; i++) {
-         string arrow = st.breakouts[i].hasBreak ? MFV_ArrowRTest(st.breakouts[i].rtest) : "-";
-         rtestLine += StringFormat("%s %s", TF3[i], arrow);
-         if(i < 4) rtestLine += " ";
-      }
+      string rtestLine = "RTest:  " + Col(TF3[0], Cell2_RTest(st.breakouts[0])) + " " + 
+                                      Col(TF3[1], Cell2_RTest(st.breakouts[1])) + " " +
+                                      Col(TF3[2], Cell2_RTest(st.breakouts[2])) + " " +
+                                      Col(TF3[3], Cell2_RTest(st.breakouts[3])) + " " +
+                                      Col(TF3[4], Cell2_RTest(st.breakouts[4]));
       MFV_Panel_PutRow(row++, rtestLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
