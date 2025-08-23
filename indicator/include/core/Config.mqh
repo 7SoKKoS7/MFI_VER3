@@ -143,6 +143,13 @@ input color EP_L_Color         = clrDeepPink;
 input ENUM_LINE_STYLE EP_LineStyle = STYLE_DOT;
 input int   EP_LineWidth       = 1;
 
+// === Labels ===
+input bool   Label_Compact        = true;    // компактный формат
+input bool   Label_ShowPrice      = true;    // показывать цену
+input bool   Label_ShowSymbol     = false;   // добавлять тикер (обычно не нужно)
+input string Label_DateFmt        = "yyyy-MM-dd HH:mm"; // формат времени в подсказках (если требуется)
+input string Label_Lang           = "EN";    // "EN" или "RU" (минимальный i18n)
+
 // === Debug ===
 input bool  Debug_Log          = false;   // Печать в «Эксперты» только при true
 

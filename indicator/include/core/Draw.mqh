@@ -29,6 +29,48 @@ string TFCode(ENUM_TIMEFRAMES tf){
    }
 }
 
+// === LABEL FORMATTING FUNCTIONS ===
+
+// форматирование цены по символу
+string MFV_PriceStr(const string symbol, double p) {
+   return DoubleToString(NormalizeDouble(p, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS)), (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
+}
+
+// tooltip для пивотов
+string MFV_LabelText_Pivot(const string symbol, ENUM_TIMEFRAMES tf, char kind, double price) {
+   string prefix = (Label_ShowSymbol ? symbol + " · " : "");
+   
+   if(Label_Compact) {
+      string kindStr = (kind=='H' ? "H" : kind=='M' ? "M" : "L");
+      return prefix + "Pivot " + TFCode(tf) + " " + kindStr + 
+             (Label_ShowPrice ? " " + MFV_PriceStr(symbol, price) : "");
+   } else {
+      string kindStr = (kind=='H' ? "High" : kind=='M' ? "Mid" : "Low");
+      return prefix + "Pivot " + TFCode(tf) + " • " + kindStr + 
+             (Label_ShowPrice ? ": " + MFV_PriceStr(symbol, price) : "");
+   }
+}
+
+// tooltip для пробоев
+string MFV_LabelText_Breakout(const string symbol, ENUM_TIMEFRAMES tf, int dir, bool strong, double level, datetime tBreak) {
+   string prefix = (Label_ShowSymbol ? symbol + " · " : "");
+   string sdir = (dir > 0 ? (Label_Compact ? "↑" : "Up") : (Label_Compact ? "↓" : "Down"));
+   string sstr = strong ? (Label_Compact ? "S" : "Strong") : (Label_Compact ? "N" : "Normal");
+   
+   string s = prefix + (Label_Compact ? "BO " : "Breakout ") + TFCode(tf) + " " + sdir + 
+              (Label_Compact ? sstr : " (" + sstr + ")");
+   
+   if(Label_ShowPrice) {
+      s += (Label_Compact ? " @" : " @ ") + MFV_PriceStr(symbol, level);
+   }
+   
+   if(!Label_Compact && tBreak > 0) {
+      s += " • " + TimeToString(tBreak, TIME_DATE|TIME_MINUTES);
+   }
+   
+   return s;
+}
+
 // получить цвет для TF (для призраков)
 color TFColor(ENUM_TIMEFRAMES tf){
    switch(tf){
@@ -165,6 +207,7 @@ void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay)
    if(pv.hasHigh) {
       string objName = objPrefix + "H";
       MFV_HLine(objName, pv.high, lineWidth, lineStyle, hColor);
+      ObjectSetString(0, objName, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'H', pv.high));
    } else {
       ObjectDelete(0, objPrefix + "H");
    }
@@ -173,6 +216,7 @@ void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay)
    if(pv.hasMid && Chart_ShowMid_CurrentTF) {
       string objName = objPrefix + "M";
       MFV_HLine(objName, pv.mid, lineWidth, lineStyle, mColor);
+      ObjectSetString(0, objName, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'M', pv.mid));
    } else {
       ObjectDelete(0, objPrefix + "M");
    }
@@ -180,6 +224,7 @@ void MFV_Draw_PivotsTF(const int tfIndex, const MFV_Pivots &pv, bool isOverlay)
    if(pv.hasLow) {
       string objName = objPrefix + "L";
       MFV_HLine(objName, pv.low, lineWidth, lineStyle, lColor);
+      ObjectSetString(0, objName, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'L', pv.low));
    } else {
       ObjectDelete(0, objPrefix + "L");
    }
@@ -195,12 +240,14 @@ void MFV_Draw_PivotsOverlay(const int tfIndex, const MFV_Pivots &pv)
       string n = StringFormat("MFV_PVT_OVR_%s_H", tf);
       MFV_HLine(n, pv.high, Overlay_LineWidth, Overlay_LineStyle, 
                 (tfIndex==0?Overlay_M5_Color:tfIndex==1?Overlay_M15_Color:tfIndex==2?Overlay_H1_Color:tfIndex==3?Overlay_H4_Color:Overlay_D1_Color));
+      ObjectSetString(0, n, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'H', pv.high));
    } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_H", tf));
 
    // для оверлея Mid рисуется, когда Chart_ShowMid_Overlay == true, PivotsChart_ShowMulti == true, PivotsChart_TFOnly == false и pv.hasMid == true
    if (pv.hasMid && Chart_ShowMid_Overlay && PivotsChart_ShowMulti && !PivotsChart_TFOnly) {
       string n = StringFormat("MFV_PVT_OVR_%s_M", tf);
       MFV_HLine(n, pv.mid, Overlay_LineWidth, Overlay_LineStyle, Panel_TextColor);
+      ObjectSetString(0, n, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'M', pv.mid));
    } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_M", tf));
 
    // L
@@ -208,6 +255,7 @@ void MFV_Draw_PivotsOverlay(const int tfIndex, const MFV_Pivots &pv)
       string n = StringFormat("MFV_PVT_OVR_%s_L", tf);
       MFV_HLine(n, pv.low, Overlay_LineWidth, Overlay_LineStyle, 
                 (tfIndex==0?Overlay_M5_Color:tfIndex==1?Overlay_M15_Color:tfIndex==2?Overlay_H1_Color:tfIndex==3?Overlay_H4_Color:Overlay_D1_Color));
+      ObjectSetString(0, n, OBJPROP_TOOLTIP, MFV_LabelText_Pivot(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), 'L', pv.low));
    } else ObjectDelete(0, StringFormat("MFV_PVT_OVR_%s_L", tf));
 }
 
@@ -370,6 +418,9 @@ void MFV_Draw_BreakoutMarkers(const int tfIndex, const MFV_BreakoutInfo &bo)
    ObjectSetInteger(0, nameArrow,  OBJPROP_SELECTABLE,false);
    ObjectSetInteger(0, nameArrow,  OBJPROP_BACK,      false);
    ObjectSetInteger(0, nameArrow,  OBJPROP_ANCHOR,    ANCHOR_CENTER);
+   
+   // ADDED: Tooltip for breakout arrow
+   ObjectSetString(0, nameArrow, OBJPROP_TOOLTIP, MFV_LabelText_Breakout(Symbol(), (ENUM_TIMEFRAMES)(tfIndex==0?PERIOD_M5:tfIndex==1?PERIOD_M15:tfIndex==2?PERIOD_H1:tfIndex==3?PERIOD_H4:PERIOD_D1), bo.dir, (bo.strength==BO_Strong), bo.level, bo.barTime));
 
    // 1.5) Индикатор силы — маленький текст рядом со стрелкой
    string nameStrength = prefix + "STR";
