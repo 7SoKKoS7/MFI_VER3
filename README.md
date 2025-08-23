@@ -201,6 +201,31 @@ MQL5/Indicators/MFI_Modular/
 - **"✗" (провал)** — закрытие за неверной стороной уровня вне зоны tol
 - **"—" (тайм-аут)** — превышен лимит `RTest_MaxBars` без ретеста
 
+## Retest Zone (MFV)
+
+**Данные:** `include/core/Breakout.mqh` → `MFV_Breakout_Update(...)` заполняет для каждого TF структуру `bo`:
+`hasBreak`, `dir`, `level`, `tolUsed`, `barTime`, `barsSinceBO`, `rtest`.
+
+**Геометрия зоны:** используется уже рассчитанный толеранс `tolUsed`.
+- Up-break: зона вниз `[bo.level - tolUsed ; bo.level]`.
+- Down-break: зона вверх `[bo.level ; bo.level + tolUsed]`.
+
+**Время:** слева — `bo.barTime` (бар пробоя), справа — `bo.barTime + RTest_MaxBars * PeriodSeconds(tf)`.
+
+**Где рисуется:** только на таймфрейме пробоя (совпадение `chart_tf` и TF события).
+
+**Критерий ретеста:** `Close` попал в `bo.level ± bo.tolUsed`. При фиксации ретеста или истечении лимита баров зона снимается.
+
+**Инпуты (Config.mqh):**
+- `RTest_MaxBars` — горизонт зоны вперёд во времени (в барах TF).
+- `RTest_DrawZoneRect` — рисовать зону ретеста как прямоугольник.
+- `RTest_DrawMinPx` — минимальная высота в пикселях (только визуально, логику не меняет).
+- `RTest_RectColorUp/Dn` — цвета для пробоев вверх/вниз.
+- `RTest_RectAlpha` — прозрачность зоны (0..255).
+
+**Отрисовка:** `include/core/Draw.mqh` (функция `MFV_Draw_RetestBox(...)`, вызов из `MFV_UpdateAll` после блока Breakout).
+**Панель:** статус ретеста в `include/core/Panel.mqh` (ячейка `RTest` показывает `…/✓/✗/—`).
+
 #### Bootstrap из истории (актуальность и якорение):
 
 При подключении индикатора может быть восстановлен последний реальный пробой PH/PL (настройка `BO_BootstrapFromHistory`).  

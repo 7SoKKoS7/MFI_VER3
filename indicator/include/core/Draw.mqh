@@ -578,11 +578,11 @@ void MFV_Draw_RetestBox(MFV_State &st, const string symbol, ENUM_TIMEFRAMES char
    ObjectSetInteger(0, objName, OBJPROP_TIMEFRAMES, OBJ_ALL_PERIODS);
    
    // Tooltip
-   string direction = (bo.dir > 0 ? " ↓" : " ↑");
-   string tooltip = "Retest zone " + TFCode(chart_tf) + direction + 
+   string direction = (bo.dir > 0 ? "↓" : "↑");
+   string tooltip = "Retest zone " + TFCode(chart_tf) + " " + direction + 
                    " | level=" + MFV_FmtPrice(bo.level, _Digits) + 
                    " tol=" + MFV_FmtPips(bo.tolUsed) + 
-                   " left=" + IntegerToString(RTest_MaxBars - bo.barsSinceBO) + " bars";
+                   " | left=" + IntegerToString(RTest_MaxBars - bo.barsSinceBO) + " bars";
    ObjectSetString(0, objName, OBJPROP_TOOLTIP, tooltip);
 }
 
