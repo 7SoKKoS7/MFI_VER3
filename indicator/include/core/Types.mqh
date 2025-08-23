@@ -25,6 +25,7 @@ struct MFV_TrendInfo {
 #define __MFV_TYPES_BREAKOUT_BLOCK__
 
 enum MFV_RTest { MFV_RTEST_WAIT=0, MFV_RTEST_OK, MFV_RTEST_FAIL };
+enum MFV_BOStrength { BO_Weak=0, BO_Normal=1, BO_Strong=2 };
 
 struct MFV_BreakoutInfo {
   bool       hasBreak;    // есть ли активный пробой
@@ -34,6 +35,8 @@ struct MFV_BreakoutInfo {
   double     priceBO;     // цена на баре пробоя
   MFV_RTest  rtest;       // состояние ретеста
   int        barsSinceBO; // количество баров с момента пробоя
+  MFV_BOStrength strength; // сила пробоя (Weak/Normal/Strong)
+  double     tolUsed;     // использованный толеранс при пробое
 };
 
 #endif // __MFV_TYPES_BREAKOUT_BLOCK__

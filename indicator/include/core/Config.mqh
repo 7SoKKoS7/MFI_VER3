@@ -69,6 +69,12 @@ input color BO_StatusColorFAIL    = clrRed;
 input color BO_StatusColorWAIT    = clrSilver;
 input color BO_StatusColorNONE    = clrDarkGray; // "—" нет ретеста по тайм-ауту
 
+// === Breakout Strength & Confirmation ===
+enum ConfirmMode { Confirm_Off, Confirm_StrongOnly, Confirm_StrongAndNormal, Confirm_All };
+input ConfirmMode BO_ConfirmMode = Confirm_StrongAndNormal;  // режим подтверждения пробоев
+input double BO_StrongTolK = 2.0;    // множитель толеранса для сильного пробоя
+input double BO_StrongATRK = 0.50;   // множитель ATR для сильного пробоя
+
 // === Panel look & feel ===
 input string Panel_FontName    = "Consolas";    // моноширинный для ровных колонок
 input int   Panel_FontSize      = 11;        // 8..28

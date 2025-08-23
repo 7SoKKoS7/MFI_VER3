@@ -51,6 +51,26 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
       return false;
    }
 
+   // Проверяем, должен ли существующий пробой быть отфильтрован по текущему режиму подтверждения
+   if(bo.hasBreak) {
+      bool pass = (BO_ConfirmMode == Confirm_Off) || (BO_ConfirmMode == Confirm_All)
+               || (BO_ConfirmMode == Confirm_StrongAndNormal && (bo.strength == BO_Strong || bo.strength == BO_Normal))
+               || (BO_ConfirmMode == Confirm_StrongOnly && bo.strength == BO_Strong);
+      
+      if(!pass) {
+         if(Debug_Log) {
+            string strengthStr = (bo.strength == BO_Strong ? "Strong" : "Normal");
+            string modeStr = (BO_ConfirmMode == Confirm_Off ? "Off" : 
+                             BO_ConfirmMode == Confirm_StrongOnly ? "StrongOnly" :
+                             BO_ConfirmMode == Confirm_StrongAndNormal ? "StrongAndNormal" : "All");
+            PrintFormat("BO CLEAR %s %s: strength=%s mode=%s -> cleared", 
+                       symbol, EnumToString(tf), strengthStr, modeStr);
+         }
+         bo.hasBreak = false;
+         bo.rtest = MFV_RTEST_WAIT;
+      }
+   }
+
    // Получить Close[1] и Close[2] (два закрытых бара) для детекции пробоя
    double c1, c2;                  // Close[1] и Close[2]
    double cbuf[];
@@ -96,23 +116,64 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
 
    // Если новый пробой - инициализируем
    if(newBreak) {
-      bo.hasBreak = true;
-      bo.dir = breakDir;
-      bo.level = breakLevel; // якорим к PH/PL
-      // время бара пробоя (закрытого) получаем безопасно
-      datetime tt[];
-      ArraySetAsSeries(tt,true);
-      if(CopyTime(symbol, tf, 1, 1, tt) == 1) bo.barTime = tt[0];
-      else bo.barTime = TimeCurrent(); // fallback, если копирование не удалось
-      bo.priceBO = c1;
-      bo.rtest = MFV_RTEST_WAIT;
-      bo.barsSinceBO = 0;
+      // Вычисляем силу пробоя
+      double dist = MathAbs(c1 - breakLevel);
+      double atr = 0;
+      double atrBuf[];
+      ArraySetAsSeries(atrBuf, true);
+      if(CopyBuffer(iATR(symbol, tf, 14), 0, 0, 1, atrBuf) == 1) atr = atrBuf[0];
       
-      if(Debug_Log) {
-         PrintFormat("BO %s %s: dir=%d level=%.5f close1=%.5f", 
-                    symbol, EnumToString(tf), bo.dir, bo.level, c1);
+      MFV_BOStrength strength = BO_Normal;
+      if((dist >= BO_StrongTolK * tol) || (atr > 0 && dist >= BO_StrongATRK * atr)) {
+         strength = BO_Strong;
       }
-      return true;
+      
+      // Применяем фильтр подтверждения
+      bool pass = (BO_ConfirmMode == Confirm_Off) || (BO_ConfirmMode == Confirm_All)
+               || (BO_ConfirmMode == Confirm_StrongAndNormal && (strength == BO_Strong || strength == BO_Normal))
+               || (BO_ConfirmMode == Confirm_StrongOnly && strength == BO_Strong);
+      
+      if(pass) {
+         bo.hasBreak = true;
+         bo.dir = breakDir;
+         bo.level = breakLevel; // якорим к PH/PL
+         // время бара пробоя (закрытого) получаем безопасно
+         datetime tt[];
+         ArraySetAsSeries(tt,true);
+         if(CopyTime(symbol, tf, 1, 1, tt) == 1) bo.barTime = tt[0];
+         else bo.barTime = TimeCurrent(); // fallback, если копирование не удалось
+         bo.priceBO = c1;
+         bo.rtest = MFV_RTEST_WAIT;
+         bo.barsSinceBO = 0;
+         bo.strength = strength;
+         bo.tolUsed = tol;
+         
+         if(Debug_Log) {
+            string strengthStr = (strength == BO_Strong ? "Strong" : "Normal");
+            string modeStr = (BO_ConfirmMode == Confirm_Off ? "Off" : 
+                             BO_ConfirmMode == Confirm_StrongOnly ? "StrongOnly" :
+                             BO_ConfirmMode == Confirm_StrongAndNormal ? "StrongAndNormal" : "All");
+            PrintFormat("BO NEW %s %s: dir=%d dist=%.5f tol=%.5f atr=%.5f strength=%s mode=%s -> kept", 
+                       symbol, EnumToString(tf), bo.dir, dist, tol, atr, strengthStr, modeStr);
+         }
+         return true;
+      } else {
+         // Если пробой отфильтрован, очищаем активный пробой для этого TF
+         if(bo.hasBreak) {
+            bo.hasBreak = false;
+            bo.rtest = MFV_RTEST_WAIT;
+         }
+         
+         if(Debug_Log) {
+            string strengthStr = (strength == BO_Strong ? "Strong" : "Normal");
+            string modeStr = (BO_ConfirmMode == Confirm_Off ? "Off" : 
+                             BO_ConfirmMode == Confirm_StrongOnly ? "StrongOnly" :
+                             BO_ConfirmMode == Confirm_StrongAndNormal ? "StrongAndNormal" : "All");
+            PrintFormat("BO FILTER %s %s: strength=%s mode=%s -> dropped", 
+                       symbol, EnumToString(tf), strengthStr, modeStr);
+         }
+         return false;
+      }
    }
 
    // ADDED (bootstrap from history if no current breakout)
@@ -154,19 +215,54 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
             bool up   = (cc[pick+1] <= H + tol) && (cc[pick] >  H + tol);
             bool down = (cc[pick+1] >= L - tol) && (cc[pick] <  L - tol);
 
-            bo.hasBreak   = true;
-            bo.dir        = up ? +1 : -1;
-            bo.level      = up ? H : L;
-            bo.barTime    = tt[pick];     // время свечи пробоя
-            bo.priceBO    = cc[pick];
-            bo.rtest      = MFV_RTEST_WAIT;
+            // Вычисляем силу пробоя для bootstrap
+            double dist = MathAbs(cc[pick] - (up ? H : L));
+            double atr = 0;
+            double atrBuf[];
+            ArraySetAsSeries(atrBuf, true);
+            if(CopyBuffer(iATR(symbol, tf, 14), 0, 0, 1, atrBuf) == 1) atr = atrBuf[0];
+            
+            MFV_BOStrength strength = BO_Normal;
+            if((dist >= BO_StrongTolK * tol) || (atr > 0 && dist >= BO_StrongATRK * atr)) {
+               strength = BO_Strong;
+            }
 
-            int ps = BO_PeriodSecondsSafe(tf);
-            bo.barsSinceBO = (int)MathMax(0, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+            // Применяем фильтр подтверждения для bootstrap
+            bool pass = (BO_ConfirmMode == Confirm_Off) || (BO_ConfirmMode == Confirm_All)
+                     || (BO_ConfirmMode == Confirm_StrongAndNormal && (strength == BO_Strong || strength == BO_Normal))
+                     || (BO_ConfirmMode == Confirm_StrongOnly && strength == BO_Strong);
+            
+            if(pass) {
+               bo.hasBreak   = true;
+               bo.dir        = up ? +1 : -1;
+               bo.level      = up ? H : L;
+               bo.barTime    = tt[pick];     // время свечи пробоя
+               bo.priceBO    = cc[pick];
+               bo.rtest      = MFV_RTEST_WAIT;
+               bo.strength   = strength;
+               bo.tolUsed    = tol;
 
-            if (Debug_Log)
-               PrintFormat("BO BOOTSTRAP %s %s: dir=%d level=%.5f bar=%I64d ageBars=%d",
-                           symbol, EnumToString(tf), bo.dir, bo.level, (long)bo.barTime, bo.barsSinceBO);
+               int ps = BO_PeriodSecondsSafe(tf);
+               bo.barsSinceBO = (int)MathMax(0, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+
+               if (Debug_Log) {
+                  string strengthStr = (strength == BO_Strong ? "Strong" : "Normal");
+                  string modeStr = (BO_ConfirmMode == Confirm_Off ? "Off" : 
+                                   BO_ConfirmMode == Confirm_StrongOnly ? "StrongOnly" :
+                                   BO_ConfirmMode == Confirm_StrongAndNormal ? "StrongAndNormal" : "All");
+                  PrintFormat("BO BOOTSTRAP %s %s: dir=%d level=%.5f bar=%I64d ageBars=%d strength=%s mode=%s -> kept",
+                              symbol, EnumToString(tf), bo.dir, bo.level, (long)bo.barTime, bo.barsSinceBO, strengthStr, modeStr);
+               }
+            } else {
+               if (Debug_Log) {
+                  string strengthStr = (strength == BO_Strong ? "Strong" : "Normal");
+                  string modeStr = (BO_ConfirmMode == Confirm_Off ? "Off" : 
+                                   BO_ConfirmMode == Confirm_StrongOnly ? "StrongOnly" :
+                                   BO_ConfirmMode == Confirm_StrongAndNormal ? "StrongAndNormal" : "All");
+                  PrintFormat("BO BOOTSTRAP FILTER %s %s: strength=%s mode=%s -> dropped",
+                              symbol, EnumToString(tf), strengthStr, modeStr);
+               }
+            }
          }
       }
    }

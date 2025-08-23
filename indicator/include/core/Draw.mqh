@@ -112,6 +112,7 @@ void MFV_Draw_BreakoutMarkers(const int tfIndex, const MFV_BreakoutInfo &bo)
    if(!bo.hasBreak || bo.barTime==0 || bo.level==0.0){
       ObjectDelete(0, nameArrow);
       ObjectDelete(0, nameStatus);
+      ObjectDelete(0, prefix + "STR"); // удаляем индикатор силы
       return;
    }
 
@@ -128,6 +129,28 @@ void MFV_Draw_BreakoutMarkers(const int tfIndex, const MFV_BreakoutInfo &bo)
    ObjectSetInteger(0, nameArrow,  OBJPROP_SELECTABLE,false);
    ObjectSetInteger(0, nameArrow,  OBJPROP_BACK,      false);
    ObjectSetInteger(0, nameArrow,  OBJPROP_ANCHOR,    ANCHOR_CENTER);
+
+   // 1.5) Индикатор силы — маленький текст рядом со стрелкой
+   string nameStrength = prefix + "STR";
+   string strengthText = "";
+   if(bo.strength == BO_Strong) strengthText = "S";
+   else if(bo.strength == BO_Normal) strengthText = "N";
+   
+   if(strengthText != "") {
+      if(ObjectFind(0, nameStrength) < 0)
+         ObjectCreate(0, nameStrength, OBJ_TEXT, 0, bo.barTime, bo.level);
+      else
+         ObjectMove(0, nameStrength, 0, bo.barTime, bo.level);
+      
+      ObjectSetString (0, nameStrength, OBJPROP_TEXT,      strengthText);
+      ObjectSetInteger(0, nameStrength, OBJPROP_FONTSIZE,  MathMax(6, BO_ArrowFontSize-2));
+      ObjectSetInteger(0, nameStrength, OBJPROP_COLOR,     (bo.dir>0?BO_ArrowColorUp:BO_ArrowColorDn));
+      ObjectSetInteger(0, nameStrength, OBJPROP_SELECTABLE,false);
+      ObjectSetInteger(0, nameStrength, OBJPROP_BACK,      false);
+      ObjectSetInteger(0, nameStrength, OBJPROP_ANCHOR,    ANCHOR_LEFT_UPPER);
+   } else {
+      ObjectDelete(0, nameStrength);
+   }
 
    // 2) Статус ретеста — компактный символ рядом, со смещением по цене
    //    WAIT: …   OK: ✓   FAIL: ✗   NONE: — (тайм-аут без ретеста)

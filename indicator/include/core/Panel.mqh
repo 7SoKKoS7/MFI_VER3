@@ -99,7 +99,13 @@ void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool show
    if(Panel_ShowBreakout) {
       string breakoutLine = "BO:    ";
       for(int i = 0; i < 5; i++) {
-         string arrow = st.breakouts[i].hasBreak ? MFV_ArrowBreakout(st.breakouts[i].dir) : "-";
+         string arrow = "-";
+         if(st.breakouts[i].hasBreak) {
+            arrow = MFV_ArrowBreakout(st.breakouts[i].dir);
+            // Добавляем индикатор силы
+            if(st.breakouts[i].strength == BO_Strong) arrow += "S";
+            else if(st.breakouts[i].strength == BO_Normal) arrow += "N";
+         }
          breakoutLine += StringFormat("%s %s", TF3[i], arrow);
          if(i < 4) breakoutLine += " ";
       }
