@@ -75,6 +75,32 @@ input ConfirmMode BO_ConfirmMode = Confirm_StrongAndNormal;  // режим по�
 input double BO_StrongTolK = 2.0;    // множитель толеранса для сильного пробоя
 input double BO_StrongATRK = 0.50;   // множитель ATR для сильного пробоя
 
+// === Retest Zone Drawing ===
+input double RTest_ZoneK = 1.0;         // множитель к tolUsed для высоты зоны
+input int    RTest_ZonePts = 0;         // фикс. высота в пунктах, если ZoneK==0
+
+// === Retest Zone Rectangle ===
+input bool   RTest_DrawZoneRect   = true;   // рисовать зону ретеста как прямоугольник
+input color  RTest_RectColorUp    = clrDodgerBlue;  // цвет для пробоя вверх
+input color  RTest_RectColorDn    = clrTomato;      // цвет для пробоя вниз
+input int    RTest_RectAlpha      = 35;     // прозрачность 0..255
+input bool   RTest_RectBack       = true;   // рисовать за графиком
+input int    RTest_RectBorderW    = 1;      // ширина границы
+input int    RTest_RectBorderStyle= STYLE_DOT; // стиль границы
+
+// === Multi-TF Retest Zone Overlay ===
+enum RTestOverlayMode { RTest_CurrentOnly, RTest_CurrentPlusParent, RTest_AllGhosted };
+input RTestOverlayMode RTest_OverlayMode = RTest_CurrentPlusParent;  // режим наложения зон ретеста
+input bool  RTest_CollapseNested = true;     // скрывать зону младшего TF, если она полностью внутри старшего и того же направления
+input int   RTest_GhostAlpha     = 20;       // альфа «призраков»
+
+// Цвета контуров по TF (для призраков)
+input color RTest_TFColor_M5  = clrDeepSkyBlue;
+input color RTest_TFColor_M15 = clrMediumPurple;
+input color RTest_TFColor_H1  = clrLimeGreen;
+input color RTest_TFColor_H4  = clrOrange;
+input color RTest_TFColor_D1  = clrTomato;
+
 // === Panel look & feel ===
 input string Panel_FontName    = "Consolas";    // моноширинный для ровных колонок
 input int   Panel_FontSize      = 11;        // 8..28

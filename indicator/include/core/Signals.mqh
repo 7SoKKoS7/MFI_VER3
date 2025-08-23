@@ -69,6 +69,9 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
       MFV_Draw_BreakoutMarkers(i, st.breakouts[i]);
    }
 
+   // Рисование зон ретеста для всех WL-TF
+   MFV_Draw_AllRetestZones(st, symbol, chart_tf);
+
    // 4) Панель — ВСЕГДА, на любом TF
    MFV_Panel_DrawAll(st, true, true, true, true, true);
    MFV_Draw_UpdateChart();
