@@ -38,7 +38,7 @@ input bool   Panel_Show_Trend   = true;
 input bool   Panel_Show_DirNow  = true;
 
 // Параметры допусков
-input int    Trend_TolPoints    = 0;     // минимальный допуск в пунктах
+input int    Trend_TolPoints    = 5;     // минимальный допуск в пунктах (минимум 1-5 для видимости)
 input double Trend_TolATRk      = 0.25;  // k для k*ATR(14)
 input double DirNow_EpsPct      = 0.10;  // dead-zone как доля (H-L)
 

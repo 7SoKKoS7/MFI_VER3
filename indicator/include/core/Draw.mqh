@@ -497,9 +497,16 @@ void MFV_Delete_RetestBox(ENUM_TIMEFRAMES tf) {
    ObjectDelete(0, "MFV_RTB_" + TFCode(tf));
 }
 
-// Форматирование пипсов
+// Форматирование пипсов с улучшенной точностью
 string MFV_FmtPips(double tol) {
-   return DoubleToString(tol/_Point, 1);
+   double pips = tol/_Point;
+   if(pips < 0.1) {
+      return DoubleToString(pips, 2) + " (~" + DoubleToString(tol, _Digits) + ")";
+   } else if(pips < 1.0) {
+      return DoubleToString(pips, 1) + " (~" + DoubleToString(tol, _Digits) + ")";
+   } else {
+      return DoubleToString(pips, 1);
+   }
 }
 
 // Рисует/обновляет/удаляет зону ретеста для ТЕКУЩЕГО chart_tf

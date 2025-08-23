@@ -89,11 +89,13 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
       return false;
    }
 
-   // толеранс как в тренде: max(points, k*ATR14)
+   // толеранс как в тренде: max(points, k*ATR14) с минимальным значением
    double atr14 = 0, abuf[];
    ArraySetAsSeries(abuf, true);
    if(CopyBuffer(iATR(symbol, tf, 14), 0, 0, 1, abuf) == 1) atr14 = abuf[0];
    double tol = MathMax(Trend_TolPoints * _Point, Trend_TolATRk * atr14);
+   // Минимальный толеранс для видимости зоны
+   if(tol < _Point) tol = _Point;
 
    // ВВЕРХ: был по эту сторону/стал по ту
    bool up   = (c2 <= H + tol) && (c1 >  H + tol);
