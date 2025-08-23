@@ -78,6 +78,7 @@ input double BO_StrongATRK = 0.50;   // множитель ATR для сильн
 // === Retest Zone Drawing ===
 input double RTest_ZoneK = 1.0;         // множитель к tolUsed для высоты зоны
 input int    RTest_ZonePts = 0;         // фикс. высота в пунктах, если ZoneK==0
+input int    RTest_DrawMinPx = 12;      // минимальная высота зоны в пикселях (только визуально)
 
 // === Retest Zone Rectangle ===
 input bool   RTest_DrawZoneRect   = true;   // рисовать зону ретеста как прямоугольник

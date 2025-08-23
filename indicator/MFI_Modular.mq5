@@ -37,6 +37,13 @@ void OnDeinit(const int reason)
    MFV_Panel_Destroy();
    MFV_Draw_ClearAll("MFV_PVT_");
    MFV_Draw_ClearBreakoutMarkers("MFV_BO_");
+   
+   // Очищаем зоны ретеста
+   MFV_Delete_RetestBox(PERIOD_M5);
+   MFV_Delete_RetestBox(PERIOD_M15);
+   MFV_Delete_RetestBox(PERIOD_H1);
+   MFV_Delete_RetestBox(PERIOD_H4);
+   MFV_Delete_RetestBox(PERIOD_D1);
 }
 
 int OnCalculate(const int rates_total,const int prev_calculated,const int begin,const double &price[])
