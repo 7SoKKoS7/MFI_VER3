@@ -113,7 +113,7 @@ input bool  Panel_ShowEarly     = false;     // eH/eL для текущего Т
 // === Chart drawing ===
 input bool  ShowPivotsOnChart        = true;
 input bool  PivotsChart_TFOnly       = true;   // только текущий ТФ
-input bool  PivotsChart_ShowMulti    = false;  // overlay всех WL-ТФ
+input bool  PivotsChart_ShowMulti    = true;   // overlay всех WL-ТФ
 input bool  Chart_ShowMid_CurrentTF  = true;   // Mid для текущего ТФ
 input bool  Chart_ShowMid_Overlay    = false;  // Mid для overlay
 
