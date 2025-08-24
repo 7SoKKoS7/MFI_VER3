@@ -173,12 +173,15 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
     }
    
        if(Debug_Log) {
-       Print("NEWS DEBUG: Server time: ", TimeToString(now_srv), " | Base: ", TimeToString(now_base), 
-             " | Window: ", TimeToString(from_srv), " to ", TimeToString(to_srv));
-       Print("NEWS DEBUG: Currencies: ", n_currencies, " | Total events: ", ArraySize(values_all), " | Found: ", (found ? "Yes" : "No"));
+       Print("NEWS | now_srv=", TimeToString(now_srv), " base=", TimeToString(now_base), 
+             " win=[", TimeToString(from_srv), "..", TimeToString(to_srv), "]");
        if(found) {
-          Print("NEWS DEBUG: Selected event: importance=", best_importance, 
-                " @ ", TimeToString(best_time), " server time, display: ", tooltip);
+          datetime show_time = best_time + NEWS_TooltipTZ_h*3600;
+          Print("NEWS | pick=", best_importance==3?"High":(best_importance==2?"Medium":"Low"), 
+                "@", TimeToString(best_time), " -> show ", TimeToString(show_time), 
+                " | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
+       } else {
+          Print("NEWS | no events found | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
        }
     }
 
