@@ -56,11 +56,12 @@ input int    RTest_MaxBars      = 10;    // максимальное колич�
 // === NEWS (calendar) ===
 input string __SEC_NEWS = "=== NEWS (calendar) ===";
 
-input bool   NEWS_ShowRow        = true;        // show panel row
-input int    NEWS_HoursAhead_h   = 3;           // hours ahead window
-input int    NEWS_GracePast_min  = 0;           // tolerance to past (minutes)
+input bool   NEWS_ShowRow        = true;        // show "Breaking news" row
+input int    NEWS_HoursAhead_h   = 3;           // hours ahead (future window)
+input int    NEWS_GracePast_min  = 0;           // grace to past (minutes)
 input string NEWS_Currencies_CSV = "EUR,USD";   // currency filter
-input int    NEWS_MinImportance  = 3;           // 3 = High/Red
+input int    NEWS_MinImportance  = 3;           // 1=All, 2=Medium+High, 3=High only (threshold, inclusive)
+input int    NEWS_TooltipTZ_min  = 0;           // timezone offset for tooltip display (minutes, +60 = +1 hour)
 
 // === Breakout & Retest — ADVANCED (moved to const) ===
 input string __SEC_BRK = "=== Breakout & Retest — ADVANCED (moved to const) ===";
@@ -176,12 +177,7 @@ static const bool   Label_ShowSymbol     = false;   // добавлять тик
 static const string Label_DateFmt        = "yyyy-MM-dd HH:mm"; // формат времени в подсказках (если требуется)
 static const string Label_Lang           = "EN";    // "EN" или "RU" (минимальный i18n)
 
-// === News (calculation only) ===
-static const bool   News_OnlyRed      = true;       // high impact only
-static const string News_Currencies   = "EUR,USD";  // watch list (comma-separated)
-static const int    News_WarnMin      = 60;         // say Y if event in <= WarnMin minutes
-static const int    News_PreMin       = 60;         // always Y inside the pre window
-static const int    News_PostMin      = 30;         // keep Y after event for PostMin minutes
+
 
 // === Debug ===
 input bool  Debug_Log          = false;   // Печать в «Эксперты» только при true

@@ -8,7 +8,7 @@ bool MFV_ZZ_FindExtrema(const string symbol, ENUM_TIMEFRAMES tf,
                         int depth, int deviation, int backstep,
                         int &outCount, int &outIdx[], double &outPrice[])
 {
-   MqlRates r[]; 
+   MqlRates r[];
    const int minBars = MathMax(500, depth*10 + backstep + 10);
    if(!MFV_CopyRates(symbol, tf, minBars, r)) {
       if(Debug_Log) Print("MFV.ZZ: Failed to copy rates for ", symbol, " ", EnumToString(tf));

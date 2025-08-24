@@ -4,6 +4,7 @@
 #include "Config.mqh"
 #include "Types.mqh"
 #include "State.mqh"
+#include "MarketData.mqh"
 
 string MFV_Panel_RowName(const int row){ return "MFV_PANEL_ROW_"+(string)row; }
 
@@ -161,30 +162,18 @@ void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool show
       y += Panel_FontSize + Panel_LineSpacingPx;
    }
 
-   // ADDED: Breaking news row
-   if(NEWS_ShowRow) {
-      datetime next_event_time;
-      string next_event_ccy, next_event_title;
-      
-      bool has_news = MFV_News_IsNear(NEWS_HoursAhead_h, NEWS_GracePast_min, 
-                                     NEWS_Currencies_CSV, NEWS_MinImportance,
-                                     next_event_time, next_event_ccy, next_event_title);
-      
-      // Status: Yes/No
-      string status = (has_news ? "Yes" : "No");
-      
-      // Create the news line with single status
-      string newsLine = "Breaking news (" + IntegerToString(NEWS_HoursAhead_h) + "h): " + status + "                    ";
-      MFV_Panel_PutRow(row++, newsLine, y);
-      y += Panel_FontSize + Panel_LineSpacingPx;
-      
-      // Debug log if news found
-      if(Debug_Log && has_news) {
-         Print("NEWS YES: ", next_event_ccy, " ", TimeToString(next_event_time, TIME_DATE|TIME_MINUTES), " \"", next_event_title, "\"");
-      }
-   }
+    // ADDED: Breaking news row
+    if(NEWS_ShowRow) {
+       int mins_to_first=-1;
+       string tooltip="";
+       bool brk = MFV_News_IsBreaking(mins_to_first, tooltip);
+       string hh = IntegerToString(NEWS_HoursAhead_h);
+       string newsLine = "Breaking news ("+hh+"h): " + (brk ? "Yes" : "No");
+       MFV_Panel_PutRow(row++, newsLine, y, tooltip);
+       y += Panel_FontSize + Panel_LineSpacingPx;
+    }
 
-   // 2) Потом Pivots
+   // 3) Потом Pivots
    MFV_Panel_PutRow(row++,"=== MFV Pivots ===", y);
    y += Panel_FontSize + Panel_LineSpacingPx;
 

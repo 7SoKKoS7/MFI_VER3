@@ -28,6 +28,10 @@ int OnInit()
    SetIndexBuffer(0,_MFV_DummyBuffer,INDICATOR_DATA);
    PlotIndexSetInteger(0,PLOT_DRAW_TYPE,DRAW_NONE);
    PlotIndexSetString(0,PLOT_LABEL,"MFV Dummy");
+   
+   // Force immediate news check on indicator start
+   MFV_News_ForceRefreshOnInit();
+   
    return(INIT_SUCCEEDED);
 }
 
