@@ -5,6 +5,15 @@
 #include "Config.mqh"
 #include "Utils.mqh"
 
+// === News Importance Filter Helper ===
+bool MFV_News_ImportancePass(const int evImp, const int minImp)
+{
+   // minImp: 1=Low+, 2=Moderate+, 3=High only
+   if(minImp <= 1) return evImp >= CALENDAR_IMPORTANCE_LOW;
+   if(minImp == 2) return evImp >= CALENDAR_IMPORTANCE_MODERATE;
+   return evImp >= CALENDAR_IMPORTANCE_HIGH;
+}
+
 // === News Cache Variables ===
 datetime g_news_last_fetch = 0;     // server time of last query
 bool     g_news_last_flag  = false; // cached response
@@ -64,8 +73,7 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
     datetime from_srv = now_base - NEWS_GracePast_min*60;
     datetime to_srv = now_base + NEWS_HoursAhead_h*3600;
 
-   int thr_in = MathMax(1,MathMin(3,NEWS_MinImportance));
-   int cal_thr = (thr_in==1 ? 0 : (thr_in==2 ? 1 : 2)); // 0 low, 1 med, 2 high
+       // Importance threshold already handled by MFV_News_ImportancePass helper
 
        // Parse currency list (split by comma, semicolon, spaces)
     string currencies[];
@@ -136,8 +144,8 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
           // Get event details to check importance
           MqlCalendarEvent ev;
           if(CalendarEventById(values_all[i].event_id, ev)) {
-             // Check importance threshold
-             if(ev.importance < cal_thr) continue;
+             // Check importance threshold using helper
+             if(!MFV_News_ImportancePass(ev.importance, NEWS_MinImportance)) continue;
              
                            // Check if time is within window and in the future relative to base time
               datetime event_time = values_all[i].time;
@@ -162,9 +170,9 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
        string tz_sign = (NEWS_TooltipTZ_h >= 0 ? "+" : "");
        string tz_offset = IntegerToString(NEWS_TooltipTZ_h);
        
-       tooltip = "Economic event, " + importance_str + " @ " +
-                 TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
-                 " (UTC" + tz_sign + tz_offset + "h)";
+               tooltip = "Economic event, " + importance_str + " @ " +
+                  TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
+                  " (UTC" + tz_sign + tz_offset + "h) — trigger";
        
        g_news_last_mins = (int)((best_time - now_base)/60);
     } else {
@@ -173,15 +181,12 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
     }
    
        if(Debug_Log) {
-       Print("NEWS | now_srv=", TimeToString(now_srv), " base=", TimeToString(now_base), 
-             " win=[", TimeToString(from_srv), "..", TimeToString(to_srv), "]");
+       Print("NEWS pick | now_srv=", TimeToString(now_srv), " base=", TimeToString(now_base), 
+             " win=[", TimeToString(from_srv), "..", TimeToString(to_srv), "] | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
        if(found) {
           datetime show_time = best_time + NEWS_TooltipTZ_h*3600;
-          Print("NEWS | pick=", best_importance==3?"High":(best_importance==2?"Medium":"Low"), 
-                "@", TimeToString(best_time), " -> show ", TimeToString(show_time), 
-                " | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
-       } else {
-          Print("NEWS | no events found | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
+          string imp_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
+          Print("NEWS pick | hit=", imp_str, "@", TimeToString(best_time), " -> show ", TimeToString(show_time));
        }
     }
 
