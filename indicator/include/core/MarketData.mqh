@@ -46,112 +46,138 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
                 IntegerToString(NEWS_GracePast_min) + "|" +
                 cur + "|" + IntegerToString(MathMax(1,MathMin(3,NEWS_MinImportance)));
 
-   // Determine if it's time to update cache
-   datetime now_srv = TimeTradeServer(); if(now_srv==0) now_srv=TimeCurrent();
-   bool first_call = (g_news_last_fetch==0);
-   bool key_changed = (key != g_news_last_key);
-   bool minute_stale = (!first_call && (now_srv - g_news_last_fetch) >= 60);
+       // Determine if it's time to update cache
+    datetime now_srv = TimeTradeServer(); if(now_srv==0) now_srv=TimeCurrent();
+    bool first_call = (g_news_last_fetch==0);
+    bool key_changed = (key != g_news_last_key);
+    bool minute_stale = (!first_call && (now_srv - g_news_last_fetch) >= 60);
 
-   if(!first_call && !key_changed && !minute_stale) {
-      mins_to_first = g_news_last_mins;
-      tooltip = g_news_last_tooltip;
-      return g_news_last_flag;                // return cache without query
-   }
+    if(!first_call && !key_changed && !minute_stale) {
+       mins_to_first = g_news_last_mins;
+       tooltip = g_news_last_tooltip;
+       return g_news_last_flag;                // return cache without query
+    }
 
-   // === Fresh calendar query (UTC) ===
-   datetime now_utc = TimeGMT();
-   datetime from_utc = now_utc - NEWS_GracePast_min*60;
-   datetime to_utc = now_utc + NEWS_HoursAhead_h*3600;
+    // === Fresh calendar query (trading server time) ===
+    datetime from_srv = now_srv - NEWS_GracePast_min*60;
+    datetime to_srv = now_srv + NEWS_HoursAhead_h*3600;
 
    int thr_in = MathMax(1,MathMin(3,NEWS_MinImportance));
    int cal_thr = (thr_in==1 ? 0 : (thr_in==2 ? 1 : 2)); // 0 low, 1 med, 2 high
 
-   // Parse currency list (split by comma and semicolon, trim, uppercase)
-   string currencies[];
-   int n_currencies = 0;
-   
-   // Split by comma first
-   string comma_split[];
-   int n_comma = StringSplit(cur, ',', comma_split);
-   
-   for(int i=0; i<n_comma; i++) {
-      string token = comma_split[i];
-      // Trim whitespace
-      while(StringLen(token) > 0 && StringGetCharacter(token, 0) == ' ') {
-         token = StringSubstr(token, 1);
-      }
-      while(StringLen(token) > 0 && StringGetCharacter(token, StringLen(token)-1) == ' ') {
-         token = StringSubstr(token, 0, StringLen(token)-1);
-      }
-      
-      if(StringLen(token) > 0) {
-         // Store token as-is, we'll do case-insensitive comparison later
-         ArrayResize(currencies, n_currencies + 1);
-         currencies[n_currencies] = token;
-         n_currencies++;
-      }
-   }
+       // Parse currency list (split by comma, semicolon, spaces)
+    string currencies[];
+    int n_currencies = 0;
+    
+    // Normalize separators: replace ; and spaces with commas
+    string normalized = cur;
+    // Replace semicolons with commas
+    for(int i=0; i<StringLen(normalized); i++) {
+       if(StringGetCharacter(normalized, i) == ';') {
+          normalized = StringSubstr(normalized, 0, i) + "," + StringSubstr(normalized, i+1);
+       }
+    }
+    
+    // Split by comma
+    string comma_split[];
+    int n_comma = StringSplit(normalized, ',', comma_split);
+    
+    for(int i=0; i<n_comma; i++) {
+       string token = comma_split[i];
+       // Trim whitespace
+       while(StringLen(token) > 0 && StringGetCharacter(token, 0) == ' ') {
+          token = StringSubstr(token, 1);
+       }
+       while(StringLen(token) > 0 && StringGetCharacter(token, StringLen(token)-1) == ' ') {
+          token = StringSubstr(token, 0, StringLen(token)-1);
+       }
+       
+       if(StringLen(token) > 0) {
+          // Manual uppercase
+          string upper_token = "";
+          for(int j=0; j<StringLen(token); j++) {
+             ushort ch = StringGetCharacter(token, j);
+             if(ch >= 'a' && ch <= 'z') ch = ch - 32; // to uppercase
+             upper_token += StringSubstr(token, j, 1);
+          }
+          
+          ArrayResize(currencies, n_currencies + 1);
+          currencies[n_currencies] = upper_token;
+          n_currencies++;
+       }
+    }
    
    bool found = false;
    datetime best_time = 0;
    int best_importance = -1;
 
-   // === Real MT5 Calendar API Integration ===
-   MqlCalendarValue vals[];
-   int total = CalendarValueHistory(vals, from_utc, to_utc);
-   
-   if(total > 0) {
-      for(int i=0; i<total; i++) {
-         // Get event details to check importance and currency
-         MqlCalendarEvent ev;
-         if(CalendarEventById(vals[i].event_id, ev)) {
-            // Check importance threshold
-            if(ev.importance < cal_thr) continue;
-            
-            // Currency filtering temporarily disabled due to API structure uncertainty
-            // TODO: Implement proper currency filtering when MqlCalendarEvent structure is documented
-            bool currency_match = true; // Accept all currencies for now
-            
-            // Check if time is within window (all times treated as UTC)
-            datetime event_time = vals[i].time;
-            if(event_time < from_utc || event_time > to_utc) continue;
-            
-                         // Found matching event - check if it's the best one
+       // === Real MT5 Calendar API Integration ===
+    // Collect values from all currencies
+    MqlCalendarValue values_all[];
+    ArrayResize(values_all, 0);
+    
+    for(int c=0; c<n_currencies; c++) {
+       string currency = currencies[c];
+       MqlCalendarValue vals[];
+       int total = CalendarValueHistory(vals, from_srv, to_srv, NULL, currency);
+       
+       if(total > 0) {
+          int old_size = ArraySize(values_all);
+          ArrayResize(values_all, old_size + total);
+          ArrayCopy(values_all, vals, old_size, 0, total);
+       }
+    }
+    
+    // Process all collected values
+    if(ArraySize(values_all) > 0) {
+       for(int i=0; i<ArraySize(values_all); i++) {
+          // Get event details to check importance
+          MqlCalendarEvent ev;
+          if(CalendarEventById(values_all[i].event_id, ev)) {
+             // Check importance threshold
+             if(ev.importance < cal_thr) continue;
+             
+             // Check if time is within window and in the future
+             datetime event_time = values_all[i].time;
+             if(event_time < from_srv || event_time > to_srv) continue;
+             if(event_time < now_srv) continue; // Only future events
+             
+             // Found matching event - check if it's the best one
              if(!found || event_time < best_time || 
                 (event_time == best_time && ev.importance > best_importance)) {
                 found = true;
                 best_time = event_time;
                 best_importance = ev.importance;
              }
-         }
-      }
-   }
+          }
+       }
+    }
    
-   // Generate tooltip if found
-   if(found && best_time > 0) {
-      datetime show_time = best_time + NEWS_TooltipTZ_min*60; // apply timezone offset for display
-      string importance_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
-      string tz_sign = (NEWS_TooltipTZ_min >= 0 ? "+" : "");
-      string tz_offset = IntegerToString(NEWS_TooltipTZ_min/60);
-      
-      tooltip = "Economic event, " + importance_str + " @ " +
-                TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
-                " (UTC" + tz_sign + tz_offset + ")";
-      
-      g_news_last_mins = (int)((best_time - now_utc)/60);
-   } else {
-      tooltip = "";
-      g_news_last_mins = -1;
-   }
+       // Generate tooltip if found
+    if(found && best_time > 0) {
+       datetime show_time = best_time + NEWS_TooltipTZ_min*60; // apply timezone offset for display
+       string importance_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
+       string tz_sign = (NEWS_TooltipTZ_min >= 0 ? "+" : "");
+       string tz_offset = IntegerToString(NEWS_TooltipTZ_min/60);
+       
+       tooltip = "Economic event, " + importance_str + " @ " +
+                 TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
+                 " (UTC" + tz_sign + tz_offset + ")";
+       
+       g_news_last_mins = (int)((best_time - now_srv)/60);
+    } else {
+       tooltip = "";
+       g_news_last_mins = -1;
+    }
    
-   if(Debug_Log) {
-      Print("NEWS DEBUG: UTC window ", TimeToString(from_utc), " to ", TimeToString(to_utc), 
-            " | Total events: ", total, " | Found: ", (found ? "Yes" : "No"));
-      if(found) {
-         Print("NEWS DEBUG: Selected event: importance=", best_importance, 
-               " @ ", TimeToString(best_time), " UTC, display: ", tooltip);
-      }
-   }
+       if(Debug_Log) {
+       Print("NEWS DEBUG: Server time window ", TimeToString(from_srv), " to ", TimeToString(to_srv), 
+             " | Currencies: ", n_currencies, " | Total events: ", ArraySize(values_all), " | Found: ", (found ? "Yes" : "No"));
+       if(found) {
+          Print("NEWS DEBUG: Selected event: importance=", best_importance, 
+                " @ ", TimeToString(best_time), " server time, display: ", tooltip);
+       }
+    }
 
    // Update cache
    g_news_last_flag  = found;
