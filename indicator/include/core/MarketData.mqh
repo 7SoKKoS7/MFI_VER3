@@ -42,9 +42,10 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
       }
    }
    cur = temp;
-   string key = IntegerToString(NEWS_HoursAhead_h) + "|" +
-                IntegerToString(NEWS_GracePast_min) + "|" +
-                cur + "|" + IntegerToString(MathMax(1,MathMin(3,NEWS_MinImportance)));
+       string key = IntegerToString(NEWS_HoursAhead_h) + "|" +
+                 IntegerToString(NEWS_GracePast_min) + "|" +
+                 cur + "|" + IntegerToString(MathMax(1,MathMin(3,NEWS_MinImportance))) + "|" +
+                 IntegerToString(NEWS_WindowTZ_h) + "|" + IntegerToString(NEWS_TooltipTZ_h);
 
        // Determine if it's time to update cache
     datetime now_srv = TimeTradeServer(); if(now_srv==0) now_srv=TimeCurrent();
@@ -58,9 +59,10 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
        return g_news_last_flag;                // return cache without query
     }
 
-    // === Fresh calendar query (trading server time) ===
-    datetime from_srv = now_srv - NEWS_GracePast_min*60;
-    datetime to_srv = now_srv + NEWS_HoursAhead_h*3600;
+    // === Fresh calendar query (trading server time with window offset) ===
+    datetime now_base = now_srv - NEWS_WindowTZ_h*3600;
+    datetime from_srv = now_base - NEWS_GracePast_min*60;
+    datetime to_srv = now_base + NEWS_HoursAhead_h*3600;
 
    int thr_in = MathMax(1,MathMin(3,NEWS_MinImportance));
    int cal_thr = (thr_in==1 ? 0 : (thr_in==2 ? 1 : 2)); // 0 low, 1 med, 2 high
@@ -137,10 +139,10 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
              // Check importance threshold
              if(ev.importance < cal_thr) continue;
              
-             // Check if time is within window and in the future
-             datetime event_time = values_all[i].time;
-             if(event_time < from_srv || event_time > to_srv) continue;
-             if(event_time < now_srv) continue; // Only future events
+                           // Check if time is within window and in the future relative to base time
+              datetime event_time = values_all[i].time;
+              if(event_time < from_srv || event_time > to_srv) continue;
+              if(event_time < now_base) continue; // Only future events relative to base
              
              // Found matching event - check if it's the best one
              if(!found || event_time < best_time || 
@@ -155,24 +157,25 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
    
        // Generate tooltip if found
     if(found && best_time > 0) {
-       datetime show_time = best_time + NEWS_TooltipTZ_min*60; // apply timezone offset for display
+       datetime show_time = best_time + NEWS_TooltipTZ_h*3600; // apply timezone offset for display
        string importance_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
-       string tz_sign = (NEWS_TooltipTZ_min >= 0 ? "+" : "");
-       string tz_offset = IntegerToString(NEWS_TooltipTZ_min/60);
+       string tz_sign = (NEWS_TooltipTZ_h >= 0 ? "+" : "");
+       string tz_offset = IntegerToString(NEWS_TooltipTZ_h);
        
        tooltip = "Economic event, " + importance_str + " @ " +
                  TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
-                 " (UTC" + tz_sign + tz_offset + ")";
+                 " (UTC" + tz_sign + tz_offset + "h)";
        
-       g_news_last_mins = (int)((best_time - now_srv)/60);
+       g_news_last_mins = (int)((best_time - now_base)/60);
     } else {
        tooltip = "";
        g_news_last_mins = -1;
     }
    
        if(Debug_Log) {
-       Print("NEWS DEBUG: Server time window ", TimeToString(from_srv), " to ", TimeToString(to_srv), 
-             " | Currencies: ", n_currencies, " | Total events: ", ArraySize(values_all), " | Found: ", (found ? "Yes" : "No"));
+       Print("NEWS DEBUG: Server time: ", TimeToString(now_srv), " | Base: ", TimeToString(now_base), 
+             " | Window: ", TimeToString(from_srv), " to ", TimeToString(to_srv));
+       Print("NEWS DEBUG: Currencies: ", n_currencies, " | Total events: ", ArraySize(values_all), " | Found: ", (found ? "Yes" : "No"));
        if(found) {
           Print("NEWS DEBUG: Selected event: importance=", best_importance, 
                 " @ ", TimeToString(best_time), " server time, display: ", tooltip);
