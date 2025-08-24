@@ -61,8 +61,7 @@ input int    NEWS_HoursAhead_h   = 3;           // hours ahead (future window)
 input int    NEWS_GracePast_min  = 0;           // grace to past (minutes)
 input string NEWS_Currencies_CSV = "EUR,USD";   // currency filter
 input int    NEWS_MinImportance  = 3;           // 1=All, 2=Medium+High, 3=High only (threshold, inclusive)
-input int    NEWS_WindowTZ_h     = 1;           // сдвиг СРАВНЕНИЯ окна (часы; +1 если сервер «спешит» на час)
-input int    NEWS_TooltipTZ_h    = 1;           // сдвиг ТОЛЬКО ОТОБРАЖЕНИЯ (часы; +1 чтобы совпадать с календарём)
+input int    NEWS_WindowTZ_h     = 0;           // сдвиг СРАВНЕНИЯ окна (часы; 0 = как у сервера)
 
 // === Breakout & Retest — ADVANCED (moved to const) ===
 input string __SEC_BRK = "=== Breakout & Retest — ADVANCED (moved to const) ===";

@@ -51,10 +51,10 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
       }
    }
    cur = temp;
-       string key = IntegerToString(NEWS_HoursAhead_h) + "|" +
-                 IntegerToString(NEWS_GracePast_min) + "|" +
-                 cur + "|" + IntegerToString(MathMax(1,MathMin(3,NEWS_MinImportance))) + "|" +
-                 IntegerToString(NEWS_WindowTZ_h) + "|" + IntegerToString(NEWS_TooltipTZ_h);
+               string key = IntegerToString(NEWS_HoursAhead_h) + "|" +
+                  IntegerToString(NEWS_GracePast_min) + "|" +
+                  cur + "|" + IntegerToString(MathMax(1,MathMin(3,NEWS_MinImportance))) + "|" +
+                  IntegerToString(NEWS_WindowTZ_h);
 
        // Determine if it's time to update cache
     datetime now_srv = TimeTradeServer(); if(now_srv==0) now_srv=TimeCurrent();
@@ -165,10 +165,10 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
    
        // Generate tooltip if found
     if(found && best_time > 0) {
-       datetime show_time = best_time + NEWS_TooltipTZ_h*3600; // apply timezone offset for display
-       string importance_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
-       string tz_sign = (NEWS_TooltipTZ_h >= 0 ? "+" : "");
-       string tz_offset = IntegerToString(NEWS_TooltipTZ_h);
+               datetime show_time = best_time + NEWS_WindowTZ_h*3600; // apply timezone offset for display
+        string importance_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
+        string tz_sign = (NEWS_WindowTZ_h >= 0 ? "+" : "");
+        string tz_offset = IntegerToString(NEWS_WindowTZ_h);
        
                tooltip = "Economic event, " + importance_str + " @ " +
                   TimeToString(show_time, TIME_DATE|TIME_MINUTES) +
@@ -183,11 +183,11 @@ bool MFV_News_IsBreaking(int &mins_to_first, string &tooltip)
        if(Debug_Log) {
        Print("NEWS pick | now_srv=", TimeToString(now_srv), " base=", TimeToString(now_base), 
              " win=[", TimeToString(from_srv), "..", TimeToString(to_srv), "] | CSV=", NEWS_Currencies_CSV, " | MinImp=", NEWS_MinImportance);
-       if(found) {
-          datetime show_time = best_time + NEWS_TooltipTZ_h*3600;
-          string imp_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
-          Print("NEWS pick | hit=", imp_str, "@", TimeToString(best_time), " -> show ", TimeToString(show_time));
-       }
+               if(found) {
+           datetime show_time = best_time + NEWS_WindowTZ_h*3600;
+           string imp_str = (best_importance == 3 ? "High" : (best_importance == 2 ? "Medium" : "Low"));
+           Print("NEWS pick | hit=", imp_str, "@", TimeToString(best_time), " -> show ", TimeToString(show_time));
+        }
     }
 
    // Update cache
