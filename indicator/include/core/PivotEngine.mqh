@@ -46,6 +46,35 @@ bool MFV_Pivot_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, const int tfInd
       st.piv[tfIndex].hasMid = true;            // ← ключевая строка
    }
    
+   // ADDED: Диагностический самотест пивотов
+   if (Debug_Log) {
+      const string tfc = TFCode(tf); // уже есть в Draw.mqh
+      // 1) Что видит ZigZag на этом TF (последние 5 экстремумов)
+      PrintFormat("PVT CHECK %s: ZZ cnt=%d | last idx=%d | last price=%.6f | last time=%s",
+                  tfc, count, (count>0? zzIdx[0]:-1),
+                  (count>0? zzPrice[0]:0.0),
+                  (count>0? TimeToString(iTime(symbol, tf, zzIdx[0])):"n/a"));
+
+      // 2) Текущее состояние пивотов по TF
+      PrintFormat("PVT CHECK %s: H=%.6f (t=%s) | M=%.6f | L=%.6f (t=%s)",
+                  tfc,
+                  st.piv[tfIndex].high, TimeToString(st.piv[tfIndex].highTime),
+                  st.piv[tfIndex].mid,
+                  st.piv[tfIndex].low,  TimeToString(st.piv[tfIndex].lowTime));
+
+      // 3) Возраст пивотов в барах TF
+      datetime t_last = iTime(symbol, tf, 1); // время последнего ЗАКРЫТОГО бара
+      int ageH = (st.piv[tfIndex].highTime>0 ? (int)MathFloor((t_last - st.piv[tfIndex].highTime)/PeriodSeconds(tf)) : -1);
+      int ageL = (st.piv[tfIndex].lowTime >0 ? (int)MathFloor((t_last - st.piv[tfIndex].lowTime )/PeriodSeconds(tf)) : -1);
+      PrintFormat("PVT CHECK %s: ageH=%d bars | ageL=%d bars", tfc, ageH, ageL);
+
+      // 4) Триггеры проблем — печатаем короткую причину
+      if (count < 2)
+         PrintFormat("PVT WARN %s: insufficient ZZ extrema for pivot update", tfc);
+      if (st.piv[tfIndex].highTime>0 && st.piv[tfIndex].lowTime>0 && st.piv[tfIndex].highTime==st.piv[tfIndex].lowTime)
+         PrintFormat("PVT WARN %s: highTime==lowTime (check classification)", tfc);
+   }
+   
    return true;
 }
 

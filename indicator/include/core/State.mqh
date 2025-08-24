@@ -8,6 +8,7 @@ struct MFV_State
    MFV_Pivots piv[5];
    MFV_Reason lastReason[5];
    MFV_BreakoutInfo breakouts[5]; // ADDED (Breakout + Retest storage per TF)
+   MFV_NewsInfo news; // ADDED (Breaking news information)
 };
 static MFV_State g_state;
 

@@ -118,4 +118,37 @@ struct MFV_Pivots
    }
 };
 
+#ifndef __MFV_TYPES_NEWS_BLOCK__
+#define __MFV_TYPES_NEWS_BLOCK__
+
+struct MFV_NewsInfo {
+  bool      hasImportant;   // Y/N for panel
+  int       mins_to_event;  // >=0: minutes until; <0: minutes since
+  datetime  event_time;     // nearest event time in window
+  string    event_title;    // short title for tooltip
+  bool      test_override;  // true if News_TestHrsAhead > 0
+  int       horizon_used;   // minutes of effective horizon (for tooltip)
+  
+  // Constructor
+  MFV_NewsInfo() {
+    hasImportant = false;
+    mins_to_event = 0;
+    event_time = 0;
+    event_title = "";
+    test_override = false;
+    horizon_used = 0;
+  }
+  
+  MFV_NewsInfo(const MFV_NewsInfo& other) {
+    hasImportant = other.hasImportant;
+    mins_to_event = other.mins_to_event;
+    event_time = other.event_time;
+    event_title = other.event_title;
+    test_override = other.test_override;
+    horizon_used = other.horizon_used;
+  }
+};
+
+#endif // __MFV_TYPES_NEWS_BLOCK__
+
 #endif // __MFV_TYPES_MQH__

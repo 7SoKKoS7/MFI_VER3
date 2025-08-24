@@ -17,6 +17,8 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
    const int curIdx = MFV_TFIndex(chart_tf);    // может быть -1 (не из WL)
    const ENUM_TIMEFRAMES WL[5] = { PERIOD_M5, PERIOD_M15, PERIOD_H1, PERIOD_H4, PERIOD_D1 };
 
+
+
    // 1) ВСЕГДА считаем пивоты для всех WL-TF (даже если текущий TF не из WL)
    for (int i=0; i<5; ++i) {
       int zzDepth, zzDev, zzBack;
@@ -33,6 +35,13 @@ int MFV_UpdateAll(MFV_State &st, const string symbol, ENUM_TIMEFRAMES chart_tf, 
          PrintFormat("PIV %s: H?%d L?%d M?%d  H=%.5f L=%.5f M=%.5f",
                     EnumToString(WL[i]), (int)st.piv[i].hasHigh, (int)st.piv[i].hasLow, (int)st.piv[i].hasMid,
                     st.piv[i].high, st.piv[i].low, st.piv[i].mid);
+      }
+      
+      // ADDED: Диагностика порядка оркестрации
+      if (Debug_Log) {
+         // Короткая строка контроля
+         PrintFormat("PVT PASS %s: updated pivots -> H=%.6f | M=%.6f | L=%.6f",
+                    TFCode(WL[i]), st.piv[i].high, st.piv[i].mid, st.piv[i].low);
       }
    }
 

@@ -244,8 +244,17 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
                bo.strength   = strength;
                bo.tolUsed    = tol;
 
-               int ps = BO_PeriodSecondsSafe(tf);
-               bo.barsSinceBO = (int)MathMax(0, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+               // Calculate barsSinceBO based on closed bars for bootstrap
+               datetime t_last = iTime(symbol, tf, 1);          // строго закрытый бар
+               int idx_last   = iBarShift(symbol, tf, t_last, true);
+               int idx_break  = iBarShift(symbol, tf, bo.barTime, true);
+
+               // защита от -1 и рассинхронизаций
+               int barsSince  = 0;
+               if (idx_last >= 0 && idx_break >= 0)
+                  barsSince = MathMax(0, idx_break - idx_last);
+
+               bo.barsSinceBO = barsSince;
 
                if (Debug_Log) {
                   string strengthStr = (strength == BO_Strong ? "Strong" : "Normal");
@@ -272,11 +281,20 @@ bool MFV_Breakout_UpdateTF(const string symbol, ENUM_TIMEFRAMES tf, int tfIndex,
    // Если нет активного пробоя - выходим
    if(!bo.hasBreak) return false;
 
-   // IMPROVED (recompute barsSinceBO from barTime only if breakout is active)
+   // IMPROVED (recompute barsSinceBO based on closed bars, not real time)
    if (bo.hasBreak)
    {
-      int ps = BO_PeriodSecondsSafe(tf);
-      bo.barsSinceBO = (int)MathMax(bo.barsSinceBO, (BO_TNow(symbol, tf) - bo.barTime) / ps);
+      // last closed bar on tf
+      datetime t_last = iTime(symbol, tf, 1);          // строго закрытый бар
+      int idx_last   = iBarShift(symbol, tf, t_last, true);
+      int idx_break  = iBarShift(symbol, tf, bo.barTime, true);
+
+      // защита от -1 и рассинхронизаций
+      int barsSince  = 0;
+      if (idx_last >= 0 && idx_break >= 0)
+         barsSince = MathMax(0, idx_break - idx_last);
+
+      bo.barsSinceBO = barsSince;
    }
 
    // Четкие условия ретеста/провала

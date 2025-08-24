@@ -15,7 +15,7 @@ void MFV_Panel_ClearUnused(const int used_rows){
    }
 }
 
-void MFV_Panel_PutRow(const int row, const string text, const int y){
+void MFV_Panel_PutRow(const int row, const string text, const int y, const string tooltip = ""){
    const string name = MFV_Panel_RowName(row);
    if(ObjectFind(0,name)<0){
       ObjectCreate(0,name,OBJ_LABEL,0,0,0);
@@ -29,6 +29,9 @@ void MFV_Panel_PutRow(const int row, const string text, const int y){
    ObjectSetString (0,name,OBJPROP_FONT,"Consolas"); // Force monospaced font
    ObjectSetInteger(0,name,OBJPROP_COLOR,Panel_TextColor);
    ObjectSetString (0,name,OBJPROP_TEXT,text);
+   if(tooltip != "") {
+      ObjectSetString(0,name,OBJPROP_TOOLTIP,tooltip);
+   }
 }
 
 // моноширинный шрифт уже есть (Consolas). Делаем унифицированные ярлыки:
@@ -106,6 +109,8 @@ string Cell2_RTest(const MFV_BreakoutInfo &bo) {
    return "? ";
 }
 
+
+
 string Col(const string tf3, const string cell2) {
    return tf3 + " " + cell2; // "M5 " + " " + "↑S" = 6 chars total
 }
@@ -154,6 +159,29 @@ void MFV_Panel_DrawAll(const MFV_State &st, bool showM5, bool showM15, bool show
                                       Col(TF3[4], Cell2_RTest(st.breakouts[4]));
       MFV_Panel_PutRow(row++, rtestLine, y);
       y += Panel_FontSize + Panel_LineSpacingPx;
+   }
+
+   // ADDED: Breaking news row
+   if(NEWS_ShowRow) {
+      datetime next_event_time;
+      string next_event_ccy, next_event_title;
+      
+      bool has_news = MFV_News_IsNear(NEWS_HoursAhead_h, NEWS_GracePast_min, 
+                                     NEWS_Currencies_CSV, NEWS_MinImportance,
+                                     next_event_time, next_event_ccy, next_event_title);
+      
+      // Status: Yes/No
+      string status = (has_news ? "Yes" : "No");
+      
+      // Create the news line with single status
+      string newsLine = "Breaking news (" + IntegerToString(NEWS_HoursAhead_h) + "h): " + status + "                    ";
+      MFV_Panel_PutRow(row++, newsLine, y);
+      y += Panel_FontSize + Panel_LineSpacingPx;
+      
+      // Debug log if news found
+      if(Debug_Log && has_news) {
+         Print("NEWS YES: ", next_event_ccy, " ", TimeToString(next_event_time, TIME_DATE|TIME_MINUTES), " \"", next_event_title, "\"");
+      }
    }
 
    // 2) Потом Pivots

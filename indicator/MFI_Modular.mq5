@@ -12,12 +12,12 @@
 #include "include/core/Utils.mqh"
 #include "include/core/MarketData.mqh"
 #include "include/core/ZigZagAdapter.mqh"
+#include "include/core/Draw.mqh"
 #include "include/core/PivotEngine.mqh"
 #include "include/core/TrendEngine.mqh"
 #include "include/core/Breakout.mqh"
 #include "include/core/Filters.mqh"
 #include "include/core/Signals.mqh"
-#include "include/core/Draw.mqh"
 #include "include/core/Panel.mqh"
 #include "include/core/Logger.mqh"
 
